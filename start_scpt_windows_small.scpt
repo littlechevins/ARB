@@ -3,20 +3,47 @@ tell application "iTerm2"
     set newTab0 to (create tab with default profile)
     tell current session of newTab0
       write text "echo exporting flask app"
-      write text "export FLASK_APP=node.py"
-      write text "python -m flask run -p 5000"
+      write text "python node.py -id node_1 -ip 5001"
     end tell
     set newTab1 to (create tab with default profile)
     tell current session of newTab1
       write text "echo exporting flask app"
-      write text "export FLASK_APP=node.py"
-      write text "python -m flask run -p 5001"
+      write text "python node.py -id node_2 -ip 5002"
     end tell
     set newTab2 to (create tab with default profile)
     tell current session of newTab2
       write text "echo exporting flask app"
-      write text "export FLASK_APP=node.py"
-      write text "python -m flask run -p 5002"
+      write text "python node.py -id node_3 -ip 5003"
+    end tell
+    set newTab3 to (create tab with default profile)
+    tell current session of newTab3
+      write text "echo exporting flask app"
+      write text "python node.py -id node_4 -ip 5004"
+    end tell
+    set newTab4 to (create tab with default profile)
+    tell current session of newTab4
+      write text "echo exporting flask app"
+      write text "python node.py -id node_5 -ip 5005"
+    end tell
+    set newTab5 to (create tab with default profile)
+    tell current session of newTab5
+      write text "echo exporting flask app"
+      write text "python node.py -id node_6 -ip 5006"
+    end tell
+    set newTab6 to (create tab with default profile)
+    tell current session of newTab6
+      write text "echo exporting flask app"
+      write text "python node.py -id node_7 -ip 5007"
+    end tell
+    set newTab7 to (create tab with default profile)
+    tell current session of newTab7
+      write text "echo exporting flask app"
+      write text "python node.py -id node_8 -ip 5008"
+    end tell
+    set newTab8 to (create tab with default profile)
+    tell current session of newTab8
+      write text "echo exporting flask app"
+      write text "python node.py -id node_9 -ip 5009"
     end tell
   end tell
 end tell
