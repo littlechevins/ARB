@@ -45,6 +45,9 @@ class Node:
 		self.dht = {}
 		self.seqn = 0 				# sequence number for lsa
 		self.lsdb = {}
+		
+		self.end_nodes = {}
+
 
 
 import json
@@ -244,6 +247,7 @@ def info():
 @app.route('/lsa', methods=['GET'])
 def lsa():
 	# begin linked state advertisement
+	# dont advertise self if not backbone node
 
 	# create payload,
 	lsa_payload = {'node_id': node.id, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb}
