@@ -46,7 +46,7 @@ class Node:
 		self.seqn = 0 				# sequence number for lsa
 		self.lsdb = {}
 
-		self.end_nodes = {}			# {Node_ID, NODE_IP}
+		self.end_nodes = {}
 
 
 
@@ -119,9 +119,6 @@ def setup():
 		print("ERROR, no type found")
 		return ""
 
-
-	# Here we also setup the end nodes to their parent
-
 	return node.id
 
 
@@ -152,9 +149,9 @@ def backbone():
 	# send hello signal to neighbour to establish 2-way connection
 	current_neighbours = []
 
-	if node.id is not None:
+	if node.id is None:
 		# generate id for self, send along
-		# node.id = get_id()
+		node.id = get_id()
 		node.dht[get_key_from_id(node.id)] = node.id
 
 	for neighbour in neighbours_list:
@@ -172,11 +169,9 @@ def receive():
 	data = request.get_json()
 	print("yeeeee: {}".format(json.dumps(data)))
 
-	received_node_name = data['node_name']
-	# node_id_from = data['node_id']
-	node_name_from_arr = [received_node_name]
-	print("print data contents{}".format(data))
-	received_node_type = data['node_type']
+	node_name_from = data['node_name']
+	node_id_from = data['node_id']
+	node_name_from_arr = [node_name_from]
 
 	if 'dht' in data:
 		node_dht_from = data['dht']
@@ -202,47 +197,32 @@ def receive():
 	# 			break
 	# 		if new_key not in node_dht_from:
 	# 			node.id = new_id
-				# node.dht[get_key_from_id(node.id)] = node.id
+	# 			node.dht[get_key_from_id(node.id)] = node.id
 	# 			break
 
-	# if node.key not in node_dht_from:
-	# node.dht[get_key_from_id(node.id)] = node.id
-
-	if 'msg_type' in data:
-		payload_type = data['msg_type']
+	if 'type' in data:
+		payload_type = data['type']
 
 		if payload_type == 'IRQ':
-
-			# Received a neighbour request, if node.type is end node, then reply differently
-
 			print("Received payload IRQ")
 			# reply with IRQNR
 			payload = create_payload(node.id, node.node_name, node_name_from_arr, "IRQNR", node.dht, node.type)
-			ip = get_ip(received_node_name)
+			ip = get_ip(node_name_from)
 			send(payload, ip)
 		if payload_type == 'IRQNR':
 			print("Received payload IRQNR")
-
-			# check for node type, if end node
-
-			# add to known neighbours, excluding end node
-			# if received_node_type != 'end':
-			add_neighbour(received_node_name)
-
-
-			# dht_ip = get_dht_ip(received_node_name)
-			# send(node.dht, dht_ip)
-
+			# add to known neighbours
+			add_neighbour(node_name_from)
+			dht_ip = get_dht_ip(node_name_from)
+			send(node.dht, dht_ip)
 			# reply with CRQNR
 			payload = create_payload(node.id, node.node_name, node_name_from_arr, "CRQNR", node.dht, node.type)
-			ip = get_ip(received_node_name)
+			ip = get_ip(node_name_from)
 			send(payload, ip)
 		if payload_type == 'CRQNR':
 			print("Received payload CRQNR")
-			# if received_node_type != 'end':
-			add_neighbour(received_node_name)
-			# dht_ip = get_dht_ip(received_node_name)
-			dht_ip = get_ip(received_node_name)
+			add_neighbour(node_name_from)
+			dht_ip = get_dht_ip(node_name_from)
 			send(node.dht, dht_ip)
 			return ''
 
@@ -253,10 +233,10 @@ def receive():
 			received_lsdb = data['lsdb']
 
 			# check if exists, if not then add, if it does then append
-			if received_node_name not in node.lsdb:
-				node.lsdb[received_node_name] = data['neighbours']
+			if node_name_from not in node.lsdb:
+				node.lsdb[node_name_from] = data['neighbours']
 			else:
-				node.lsdb[received_node_name] = merge_two_arrays(node.lsdb[received_node_name], data['neighbours'])
+				node.lsdb[node_name_from] = merge_two_arrays(node.lsdb[node_name_from], data['neighbours'])
 
 			# now take lsdb of received and merge with own lsdb
 			for key in received_lsdb:
@@ -281,18 +261,12 @@ def lsa():
 	# begin linked state advertisement
 	# dont advertise self if not backbone node
 
-
-	# Remove later since we only cull at creation time
-	# remove_end_nodes_from_lsdb()
-
-
 	# create payload,
 	lsa_payload = {'node_id': node.id, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb, 'node_type': node.type}
 
 	# begin flooding
 	for neighbour in node.neighbours:
 		ip = get_ip(neighbour)
-		print("sending to {}".format(ip))
 		send(lsa_payload, ip)
 	return ''
 
@@ -320,11 +294,6 @@ def add_neighbour(potential_neighbour):
 	if potential_neighbour not in node.neighbours:
 		node.neighbours.append(potential_neighbour)
 
-def remove_end_nodes_from_lsdb():
-
-	for enode in node.end_nodes.keys():
-		node.lsdb.pop(enode, None)
-
 
 def read_table():
 	with open('finger_table_node_1.txt') as json_file:
@@ -343,14 +312,11 @@ def contains(key):
 # 	# return str
 # 	return read_table()
 
-@app.route('/graph', methods=['POST'])
+@app.route('/graph', methods=['GET'])
 def lsdb_to_graph():
 	    # ("a", "b", 7),  ("a", "c", 9),  ("a", "f", 14), ("b", "c", 10),
 	    # ("b", "d", 15), ("c", "d", 11), ("c", "f", 2),  ("d", "e", 6),
 	    # ("e", "f", 9)])
-	data = request.get_json()
-	print("dijkstra request{}".format(json.dumps(data)))
-
 	keys = node.lsdb.keys()
 	graph_array = []
 
@@ -363,7 +329,7 @@ def lsdb_to_graph():
 	import dijkstra2
 
 	graph = dijkstra2.Graph(graph_array)
-	shortest_path = graph.dijkstra(data[0], data[1])
+	shortest_path = graph.dijkstra("node_1", "node_9")
 
 	return jsonify(shortest_path)
 
@@ -390,8 +356,8 @@ def keys():
 #
 # 	return key
 
-def create_payload(node_id, node_name, neighbours, rq, dht, node_type):
-	payload = {'node_id': node_id, 'node_name': node_name, 'neighbours': neighbours, 'msg_type': rq, 'dht': dht, 'node_type': node_type}
+def create_payload(node_id, node_name, neighbours, rq, dht, type):
+	payload = {'node_id': node_id, 'node_name': node_name, 'neighbours': neighbours, 'type': rq, 'dht': dht, 'node_type': node.type}
 	return payload
 
 def send(payload, ip):
