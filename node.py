@@ -3,6 +3,8 @@
 # Make non blocking requests
 # https://stackoverflow.com/questions/27021440/python-requests-dont-wait-for-request-to-finish
 
+
+
 # Fix bug of null dht keys
 # Start building the LSA - linked state advertisement - ROUTING ALGO!! :)
 
@@ -29,6 +31,11 @@ import hashlib
 import random
 import string
 
+import base64
+import hashlib
+
+import re
+
 class Node:
 
 
@@ -39,6 +46,7 @@ class Node:
 	def __init__(self, node_name, type):
 		# self.id = self.get_id()
 		self.id = None
+		self.ids = []
 		self.node_name = node_name
 		self.neighbours = []
 		self.type = type
@@ -62,13 +70,15 @@ app = Flask(__name__)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--type", help="The type of node to spawn")
+parser.add_argument("-n", "--name", help="The name of node to spawn")
 parser.add_argument("-id", "--id", help="The id of node to spawn")
 parser.add_argument("-ip", "--ip", help="The ip of node to spawn")
 args = parser.parse_args()
+
 if args.type is None:
-	node = Node(args.id, "backbone")
+	node = Node(args.name, "backbone")
 else:
-	node = Node(args.id, args.type)
+	node = Node(args.name, args.type)
 
 
 
@@ -77,7 +87,7 @@ def tester():
 	return node.id
 
 
-def get_id():
+def get_random():
 	# random_data = os.urandom(128)
 	# return hashlib.md5(random_data).hexdigest()[:8]
 	x = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
@@ -101,6 +111,27 @@ def get_key_from_id(id):
 		return 'BAD'
 
 
+def rebalance_dht():
+
+	dht_count = len(node.dht)
+
+	# balance = 26 / dht_count
+
+
+def add_to_dht(node_id):
+
+
+	# add the key/node just to the first matching key, then rebalance dht
+	# first_char = node_id.charAt(0)
+	key = get_key_from_id(node_id)
+
+	node.dht[key] = node_id
+
+	rebalance_dht()
+
+	return ""
+
+
 # def manual_assign(self):
 # 	# key_ranges = ['0-9', 'a-f', 'g-l', 'm-z']
 # 	random_assign = random.randint(0,3)
@@ -111,13 +142,31 @@ def get_key_from_id(id):
 
 @app.route("/setup")
 def setup():
-	if(node.type == 'end'):
-		node.id = get_id()
-	elif(node.type == 'backbone'):
-		node.id = get_id()
-	else:
-		print("ERROR, no type found")
-		return ""
+
+
+	with open('tables/node_info.json') as node_info:
+		node_info_json = json.load(node_info)
+		node.type = node_info_json[node.node_name]["node_type"]
+		# node.ids = node_info_json[node.node_name]["node_ids"]
+
+		ids = []
+
+		for x in range(0,2):
+			hasher = hashlib.md5(get_random())
+			h1 = base64.urlsafe_b64encode(hasher.digest())
+			h1 = re.sub('[!@#$=-_]', '', h1)
+			h1 = h1[:10]
+			ids.append(h1)
+
+		node.ids = ids
+
+		if(node.type == 'end'):
+			node.id = node_info_json[node.node_name]["node_ids"][0]
+		elif(node.type == 'backbone'):
+			node.id = "TEMP"
+		else:
+			print("ERROR, no type found")
+			return ""
 
 	return node.id
 
@@ -151,11 +200,12 @@ def backbone():
 
 	if node.id is None:
 		# generate id for self, send along
-		node.id = get_id()
+		# node.id = get_id()
+		node.id = get_random()
 		node.dht[get_key_from_id(node.id)] = node.id
 
 	for neighbour in neighbours_list:
-		payload = create_payload(node.id, node.node_name, current_neighbours, "IRQ", node.dht, node.type)
+		payload = create_payload(node.id, node.node_name, current_neighbours, "IRQ", node.dht, node.type, node.ids)
 		ip = get_ip(neighbour)
 		send(payload, ip)
 	print("STOP")
@@ -177,6 +227,10 @@ def receive():
 		node_dht_from = data['dht']
 		# combine received dht with known
 		node.dht = merge_two_dicts(node_dht_from, node.dht)
+
+	if 'node_type' in data:
+		print("found node_type in data, is {}".format(data['node_type']))
+		received_node_type = data['node_type']
 
 	# add received id to dht (only add when neighbourship is established)
 	# node.dht[node_name_from] = get_key_from_id(node_name_from)
@@ -206,24 +260,36 @@ def receive():
 		if payload_type == 'IRQ':
 			print("Received payload IRQ")
 			# reply with IRQNR
-			payload = create_payload(node.id, node.node_name, node_name_from_arr, "IRQNR", node.dht, node.type)
+			payload = create_payload(node.id, node.node_name, node_name_from_arr, "IRQNR", node.dht, node.type, node.ids)
 			ip = get_ip(node_name_from)
 			send(payload, ip)
 		if payload_type == 'IRQNR':
 			print("Received payload IRQNR")
+
+			# check if sender is end node
+			if received_node_type and received_node_type == 'end':
+				print("RECEVIED MESSAGE FROM END NODE {}".format(node_name_from))
+				# check if doesnt already exist
+				if node_name_from not in node.end_nodes:
+					node.end_nodes[node_name_from] = node_id_from
+
 			# add to known neighbours
 			add_neighbour(node_name_from)
-			dht_ip = get_dht_ip(node_name_from)
-			send(node.dht, dht_ip)
+
+			# dht_ip = get_dht_ip(node_name_from)
+			# send(node.dht, dht_ip)
+
 			# reply with CRQNR
-			payload = create_payload(node.id, node.node_name, node_name_from_arr, "CRQNR", node.dht, node.type)
+			payload = create_payload(node.id, node.node_name, node_name_from_arr, "CRQNR", node.dht, node.type, node.ids)
 			ip = get_ip(node_name_from)
 			send(payload, ip)
 		if payload_type == 'CRQNR':
 			print("Received payload CRQNR")
 			add_neighbour(node_name_from)
-			dht_ip = get_dht_ip(node_name_from)
-			send(node.dht, dht_ip)
+			# dht_ip = get_dht_ip(node_name_from)
+			# send(node.dht, dht_ip)
+			# send final ok
+			#TODO
 			return ''
 
 		if payload_type == 'lsa':
@@ -253,7 +319,7 @@ def neighbours():
 
 @app.route('/info', methods=['GET'])
 def info():
-	info = {"id": node.id, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours, "dht": node.dht, "lsdb": node.lsdb}
+	info = {"id": node.id, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours, "dht": node.dht, "lsdb": node.lsdb, "end_nodes": node.end_nodes, "ids": node.ids}
 	return jsonify(info)
 
 @app.route('/lsa', methods=['GET'])
@@ -262,7 +328,7 @@ def lsa():
 	# dont advertise self if not backbone node
 
 	# create payload,
-	lsa_payload = {'node_id': node.id, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb, 'node_type': node.type}
+	lsa_payload = {'node_id': node.id, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb, 'node_type': node.type, "node_ids": node.ids}
 
 	# begin flooding
 	for neighbour in node.neighbours:
@@ -312,11 +378,89 @@ def contains(key):
 # 	# return str
 # 	return read_table()
 
-@app.route('/graph', methods=['GET'])
+@app.route('/graph', methods=['GET', 'POST'])
 def lsdb_to_graph():
 	    # ("a", "b", 7),  ("a", "c", 9),  ("a", "f", 14), ("b", "c", 10),
 	    # ("b", "d", 15), ("c", "d", 11), ("c", "f", 2),  ("d", "e", 6),
 	    # ("e", "f", 9)])
+
+	data = request.get_json()
+	if data:
+		print("yeeeee: {}".format(json.dumps(data)))
+		start = data[0]
+		dest = data[1]
+
+	if data:
+		shortest_path = dijkstra(start, dest)
+		return jsonify(shortest_path)
+	else:
+		return ""
+
+@app.route('/find', methods=['POST'])
+def find():
+	# this should find the next node to send, if we are at a end node, use dijkstra, pass it go next node
+
+
+	print("Received routing request")
+
+	data = request.get_json()
+	destination = data['dest']
+	compare_dijk_length = []
+
+	payload = {'dest': destination}
+
+	# TODO change to node.id after intergration of dht
+	if destination == node.node_name:
+		# destination in node.ids
+		print("Received full package")
+		return "Received full package!"
+
+	# first check if end node is connected to this
+
+	if destination in node.end_nodes:
+		# send
+		ip = get_routing_ip(destination)
+		send(payload, ip)
+		return "Dijkstra routing complete!"
+
+	# method 1
+	# for neighbour in node.neighbours:
+	# 	sp = dijkstra(neighbour, destination)
+		# compare this to the next
+		# len(sp.split(","))
+
+	# --------------
+
+	if node.type != 'end':
+		# method 2
+		shortest_path = dijkstra(node.node_name, destination)
+		print("Using node.node_name")
+	else:
+		print("Using node.neighbours[0]")
+		shortest_path = dijkstra(node.neighbours[0], destination)
+
+
+	print("Calculated shortest path {}".format(shortest_path))
+
+	shortest_path = shortest_path.split(',')
+	next_node = shortest_path[0]
+	print("next node is {}".format(next_node))
+	# we have reached a path of two nodes
+	if next_node == node.node_name:
+		print("next_node == node.node_name")
+		next_node = shortest_path[1]
+
+
+	ip = get_routing_ip(next_node)
+	print("Routing to {} with payload: {}".format(ip, payload))
+	send(payload, ip)
+	return jsonify(next_node)
+
+
+
+
+
+def dijkstra(start, dest):
 	keys = node.lsdb.keys()
 	graph_array = []
 
@@ -325,14 +469,11 @@ def lsdb_to_graph():
 		for n in node_array:
 			graph_array.append((key, n, 1))
 
-
 	import dijkstra2
 
 	graph = dijkstra2.Graph(graph_array)
-	shortest_path = graph.dijkstra("node_1", "node_9")
-
-	return jsonify(shortest_path)
-
+	shortest_path = graph.dijkstra(start, dest)
+	return shortest_path
 
 def keys():
 	'''
@@ -356,8 +497,12 @@ def keys():
 #
 # 	return key
 
-def create_payload(node_id, node_name, neighbours, rq, dht, type):
-	payload = {'node_id': node_id, 'node_name': node_name, 'neighbours': neighbours, 'type': rq, 'dht': dht, 'node_type': node.type}
+# TODO
+
+
+
+def create_payload(node_id, node_name, neighbours, rq, dht, type, node_ids):
+	payload = {'node_id': node_id, 'node_name': node_name, 'neighbours': neighbours, 'type': rq, 'dht': dht, 'node_type': node.type, "node_ids": node.ids}
 	return payload
 
 def send(payload, ip):
@@ -369,14 +514,21 @@ def send(payload, ip):
 	return ""
 
 def get_ip(node_id):
-	print("node id is: " + node_id)
+	# print("node id is: " + node_id)
 	with open('tables/ips.json') as json_file:
 		data = json.load(json_file)
 		if node_id in data:
 			return 'http://127.0.0.1:' + str(data[node_id]) + '/receive'
 
+def get_routing_ip(node_id):
+	# print("node id is: " + node_id)
+	with open('tables/ips.json') as json_file:
+		data = json.load(json_file)
+		if node_id in data:
+			return 'http://127.0.0.1:' + str(data[node_id]) + '/find'
+
 def get_dht_ip(node_id):
-	print("node id is: " + node_id)
+	# print("node id is: " + node_id)
 	with open('tables/ips.json') as json_file:
 		data = json.load(json_file)
 		if node_id in data:
@@ -405,12 +557,13 @@ def create_finger_table():
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-t", "--type", help="The type of node to spawn")
+	parser.add_argument("-n", "--name", help="The name of node to spawn")
 	parser.add_argument("-id", "--id", help="The id of node to spawn")
 	parser.add_argument("-ip", "--ip", help="The ip of node to spawn")
 	args = parser.parse_args()
 	if args.type is None:
-		node = Node(args.id, "normal")
+		node = Node(args.name, "normal")
 	else:
-		node = Node(args.id, args.type)
+		node = Node(args.name, args.type)
 
 	app.run(host='localhost', port=int(args.ip), threaded=True)

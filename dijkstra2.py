@@ -86,7 +86,7 @@ class Graph:
             current_vertex = previous_vertices[current_vertex]
         if path:
             path.appendleft(current_vertex)
-        return '->'.join(path)
+        return ','.join(path)
 
 
 # graph = Graph([
