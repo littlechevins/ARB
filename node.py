@@ -30,11 +30,11 @@ import os
 import hashlib
 import random
 import string
-
 import base64
-import hashlib
 
 import re
+
+import math
 
 class Node:
 
@@ -55,6 +55,9 @@ class Node:
 		self.lsdb = {}
 
 		self.end_nodes = {}
+
+		self.backbone_nodes = []
+		self.associated_bnode = None	# String name of bnode, only applies for normal node
 
 
 
@@ -111,12 +114,36 @@ def get_key_from_id(id):
 		return 'BAD'
 
 
+# Rebalanced everytime a new node joins
 def rebalance_dht():
 
-	dht_count = len(node.dht)
+	alpha_num_set = "abcdefghijklmnopqrstuvwxyz0123456789"
 
-	# balance = 26 / dht_count
+	# dht_count = len(node.dht)
+	dht_count = len(backbone_nodes)
 
+	equal_share = int(math.ceil((36 / dht_count)))		#36 for ALPHA + NUMERIC
+
+	# loop all bnodes and assign them its equal share from the pool,
+	# recalcualte dht baased on that
+	# broadcast a reassign
+
+	string_start = 0
+	string_end = equal_share
+
+	for node in backbone_nodes:
+		key = alpha_num_set[string_start:string_end]
+
+		string_start += equal_share
+		string_end = string_start + equal_share
+
+		if string_end > len(alpha_num_set):
+			string_end = 35
+
+		if node in node.dht:
+			dht[node] = key
+		else:
+			raise ValueError("Could not locate {} node in dht table.".format(node))
 
 def add_to_dht(node_id):
 
@@ -127,9 +154,14 @@ def add_to_dht(node_id):
 
 	node.dht[key] = node_id
 
-	rebalance_dht()
-
 	return ""
+
+def keygen():
+	hasher = hashlib.md5(get_random())
+	h1 = base64.urlsafe_b64encode(hasher.digest())
+	h1 = re.sub('[!@#$=-_-\\xe2]', '', h1)
+	h1 = h1[:10]
+	return h1
 
 
 # def manual_assign(self):
@@ -149,21 +181,16 @@ def setup():
 		node.type = node_info_json[node.node_name]["node_type"]
 		# node.ids = node_info_json[node.node_name]["node_ids"]
 
-		ids = []
-
-		for x in range(0,2):
-			hasher = hashlib.md5(get_random())
-			h1 = base64.urlsafe_b64encode(hasher.digest())
-			h1 = re.sub('[!@#$=-_]', '', h1)
-			h1 = h1[:10]
-			ids.append(h1)
-
-		node.ids = ids
-
 		if(node.type == 'end'):
+			# Let node have a random amount of pk's, or take from file?
+			num_pk = random.randrange(1,3)
+
+			for x in range(0,num_pk):
+				node.ids.append(keygen())
+
 			node.id = node_info_json[node.node_name]["node_ids"][0]
 		elif(node.type == 'backbone'):
-			node.id = "TEMP"
+			node.id = None
 		else:
 			print("ERROR, no type found")
 			return ""
@@ -201,7 +228,7 @@ def backbone():
 	if node.id is None:
 		# generate id for self, send along
 		# node.id = get_id()
-		node.id = get_random()
+		# node.id = get_random()
 		node.dht[get_key_from_id(node.id)] = node.id
 
 	for neighbour in neighbours_list:
