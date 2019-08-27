@@ -45,7 +45,6 @@ class Node:
 
 	def __init__(self, node_name, type):
 		# self.id = self.get_id()
-		self.id = None
 		self.ids = []
 		self.node_name = node_name
 		self.neighbours = []
@@ -85,11 +84,6 @@ else:
 
 
 
-@app.route("/tester")
-def tester():
-	return node.id
-
-
 def get_random():
 	# random_data = os.urandom(128)
 	# return hashlib.md5(random_data).hexdigest()[:8]
@@ -97,8 +91,8 @@ def get_random():
 	return x
 
 def get_key_from_id(id):
-	print("TYPE!!!")
-	print(type(id))
+	# print("TYPE!!!")
+	# print(type(id))
 	rb = id[0]
 
 	if rb.isdigit():
@@ -114,36 +108,6 @@ def get_key_from_id(id):
 		return 'BAD'
 
 
-# Rebalanced everytime a new node joins
-def rebalance_dht():
-
-	alpha_num_set = "abcdefghijklmnopqrstuvwxyz0123456789"
-
-	# dht_count = len(node.dht)
-	dht_count = len(backbone_nodes)
-
-	equal_share = int(math.ceil((36 / dht_count)))		#36 for ALPHA + NUMERIC
-
-	# loop all bnodes and assign them its equal share from the pool,
-	# recalcualte dht baased on that
-	# broadcast a reassign
-
-	string_start = 0
-	string_end = equal_share
-
-	for node in backbone_nodes:
-		key = alpha_num_set[string_start:string_end]
-
-		string_start += equal_share
-		string_end = string_start + equal_share
-
-		if string_end > len(alpha_num_set):
-			string_end = 35
-
-		if node in node.dht:
-			dht[node] = key
-		else:
-			raise ValueError("Could not locate {} node in dht table.".format(node))
 
 def add_to_dht(node_id):
 
@@ -181,21 +145,26 @@ def setup():
 		node.type = node_info_json[node.node_name]["node_type"]
 		# node.ids = node_info_json[node.node_name]["node_ids"]
 
+		print("Setup phase, node type: {}".format(node.type))
+
 		if(node.type == 'end'):
 			# Let node have a random amount of pk's, or take from file?
 			num_pk = random.randrange(1,3)
 
 			for x in range(0,num_pk):
-				node.ids.append(keygen())
+				key = keygen()
+				print("generated key: {}".format(key))
+				node.ids.append(key)
 
-			node.id = node_info_json[node.node_name]["node_ids"][0]
+			# node.id = node_info_json[node.node_name]["node_ids"][0]
 		elif(node.type == 'backbone'):
-			node.id = None
+			# node.id = None
+			pass
 		else:
 			print("ERROR, no type found")
 			return ""
 
-	return node.id
+	return "Setup!"
 
 
 @app.route("/")
@@ -203,7 +172,7 @@ def backbone():
 	# create the backbone nodes
 
 	# gets all neighbours, reads from table
-	with open('tables/backbone.json') as json_file_backbone:
+	with open('tables/backboneAndNormal.json') as json_file_backbone:
 		backbone_data = json.load(json_file_backbone)
 		# return jsonify(backbone_data)
 
@@ -225,14 +194,14 @@ def backbone():
 	# send hello signal to neighbour to establish 2-way connection
 	current_neighbours = []
 
-	if node.id is None:
+	# if node.id is None:
 		# generate id for self, send along
 		# node.id = get_id()
 		# node.id = get_random()
-		node.dht[get_key_from_id(node.id)] = node.id
+		# node.dht[get_key_from_id(node.id)] = node.id
 
 	for neighbour in neighbours_list:
-		payload = create_payload(node.id, node.node_name, current_neighbours, "IRQ", node.dht, node.type, node.ids)
+		payload = create_payload(node.ids, node.node_name, current_neighbours, "IRQ", node.dht, node.type)
 		ip = get_ip(neighbour)
 		send(payload, ip)
 	print("STOP")
@@ -247,7 +216,7 @@ def receive():
 	print("yeeeee: {}".format(json.dumps(data)))
 
 	node_name_from = data['node_name']
-	node_id_from = data['node_id']
+	node_id_from = data['node_ids']
 	node_name_from_arr = [node_name_from]
 
 	if 'dht' in data:
@@ -307,7 +276,7 @@ def receive():
 			# send(node.dht, dht_ip)
 
 			# reply with CRQNR
-			payload = create_payload(node.id, node.node_name, node_name_from_arr, "CRQNR", node.dht, node.type, node.ids)
+			payload = create_payload(node.ids, node.node_name, node_name_from_arr, "CRQNR", node.dht, node.type)
 			ip = get_ip(node_name_from)
 			send(payload, ip)
 		if payload_type == 'CRQNR':
@@ -346,7 +315,7 @@ def neighbours():
 
 @app.route('/info', methods=['GET'])
 def info():
-	info = {"id": node.id, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours, "dht": node.dht, "lsdb": node.lsdb, "end_nodes": node.end_nodes, "ids": node.ids}
+	info = {"ids": node.ids, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours, "dht": node.dht, "lsdb": node.lsdb, "end_nodes": node.end_nodes}
 	return jsonify(info)
 
 @app.route('/lsa', methods=['GET'])
@@ -355,7 +324,7 @@ def lsa():
 	# dont advertise self if not backbone node
 
 	# create payload,
-	lsa_payload = {'node_id': node.id, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb, 'node_type': node.type, "node_ids": node.ids}
+	lsa_payload = {'node_ids': node.ids, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb, 'node_type': node.type}
 
 	# begin flooding
 	for neighbour in node.neighbours:
@@ -528,8 +497,8 @@ def keys():
 
 
 
-def create_payload(node_id, node_name, neighbours, rq, dht, type, node_ids):
-	payload = {'node_id': node_id, 'node_name': node_name, 'neighbours': neighbours, 'type': rq, 'dht': dht, 'node_type': node.type, "node_ids": node.ids}
+def create_payload(node_ids, node_name, neighbours, rq, dht, type):
+	payload = {'node_ids': node_ids, 'node_name': node_name, 'neighbours': neighbours, 'type': rq, 'dht': dht, 'node_type': node.type}
 	return payload
 
 def send(payload, ip):

@@ -3,9 +3,9 @@
   "node_2": {"node_ip": 5002, "node_ids": [], "node_type": "backbone"},
   "node_3": {"node_ip": 5003, "node_ids": [], "node_type": "backbone"},
   "node_4": {"node_ip": 5004, "node_ids": [], "node_type": "backbone"},
-  "node_5": {"node_ip": 5005, "node_ids": ["1afi3fifa2"], "node_type": "backbone"},
-  "node_6": {"node_ip": 5006 , "node_ids": ["jawl2a2pde"], "node_type": "backbone"},
-  "node_7": {"node_ip": 5007 , "node_ids": ["k1ao4f2lf3"], "node_type": "backbone"},
-  "node_8": {"node_ip": 5008 , "node_ids": ["4lkfe19brs", "romvq2jf5ab"], "node_type": "backbone"},
-  "node_9": {"node_ip": 5009 , "node_ids": ["q8gl2nvsrt"], "node_type": "backbone"}
+  "node_5": {"node_ip": 5005, "node_ids": ["1afi3fifa2"], "node_type": "end"},
+  "node_6": {"node_ip": 5006 , "node_ids": ["jawl2a2pde"], "node_type": "end"},
+  "node_7": {"node_ip": 5007 , "node_ids": ["k1ao4f2lf3"], "node_type": "end"},
+  "node_8": {"node_ip": 5008 , "node_ids": ["4lkfe19brs", "romvq2jf5ab"], "node_type": "end"},
+  "node_9": {"node_ip": 5009 , "node_ids": ["q8gl2nvsrt"], "node_type": "end"}
 }
