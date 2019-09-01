@@ -31,7 +31,7 @@ import hashlib
 import random
 import string
 import base64
-
+from dhtEngine import DHT
 import re
 
 import math
@@ -49,7 +49,6 @@ class Node:
 		self.node_name = node_name
 		self.neighbours = []
 		self.type = type
-		self.dht = {}
 		self.seqn = 0 				# sequence number for lsa
 		self.lsdb = {}
 
@@ -57,6 +56,8 @@ class Node:
 
 		self.backbone_nodes = []
 		self.associated_bnode = None	# String name of bnode, only applies for normal node
+
+		self.dhtEngine = DHT()
 
 
 
@@ -114,9 +115,9 @@ def add_to_dht(node_id):
 
 	# add the key/node just to the first matching key, then rebalance dht
 	# first_char = node_id.charAt(0)
-	key = get_key_from_id(node_id)
+	# key = get_key_from_id(node_id)
+	# node.dht[key] = node_id
 
-	node.dht[key] = node_id
 
 	return ""
 
@@ -151,7 +152,7 @@ def setup():
 			# Let node have a random amount of pk's, or take from file?
 			num_pk = random.randrange(1,3)
 
-			for x in range(0,num_pk):
+			for x in range(0, num_pk):
 				key = keygen()
 				print("generated key: {}".format(key))
 				node.ids.append(key)
@@ -201,12 +202,11 @@ def backbone():
 		# node.dht[get_key_from_id(node.id)] = node.id
 
 	for neighbour in neighbours_list:
-		payload = create_payload(node.ids, node.node_name, current_neighbours, "IRQ", node.dht, node.type)
+		payload = create_payload(node.ids, node.node_name, current_neighbours, "IRQ", node.dhtEngine.dht, node.type)
 		ip = get_ip(neighbour)
 		send(payload, ip)
 	print("STOP")
 	return "DONE"
-
 
 @app.route('/receive', methods=['POST'])
 def receive():
@@ -222,14 +222,14 @@ def receive():
 	if 'dht' in data:
 		node_dht_from = data['dht']
 		# combine received dht with known
-		node.dht = merge_two_dicts(node_dht_from, node.dht)
+		node.dhtEngine.dht = merge_two_dicts(node_dht_from, node.dhtEngine.dht)
 
 	if 'node_type' in data:
 		print("found node_type in data, is {}".format(data['node_type']))
 		received_node_type = data['node_type']
 
 	# add received id to dht (only add when neighbourship is established)
-	# node.dht[node_name_from] = get_key_from_id(node_name_from)
+	# node.dhtEngine.dht[node_name_from] = get_key_from_id(node_name_from)
 
 
 
@@ -247,7 +247,7 @@ def receive():
 	# 			break
 	# 		if new_key not in node_dht_from:
 	# 			node.id = new_id
-	# 			node.dht[get_key_from_id(node.id)] = node.id
+	# 			node.dhtEngine.dht[get_key_from_id(node.id)] = node.id
 	# 			break
 
 	if 'type' in data:
@@ -256,7 +256,7 @@ def receive():
 		if payload_type == 'IRQ':
 			print("Received payload IRQ")
 			# reply with IRQNR
-			payload = create_payload(node.id, node.node_name, node_name_from_arr, "IRQNR", node.dht, node.type, node.ids)
+			payload = create_payload(node.ids, node.node_name, node_name_from_arr, "IRQNR", node.dhtEngine.dht, node.type)
 			ip = get_ip(node_name_from)
 			send(payload, ip)
 		if payload_type == 'IRQNR':
@@ -273,17 +273,17 @@ def receive():
 			add_neighbour(node_name_from)
 
 			# dht_ip = get_dht_ip(node_name_from)
-			# send(node.dht, dht_ip)
+			# send(node.dhtEngine.dht, dht_ip)
 
 			# reply with CRQNR
-			payload = create_payload(node.ids, node.node_name, node_name_from_arr, "CRQNR", node.dht, node.type)
+			payload = create_payload(node.ids, node.node_name, node_name_from_arr, "CRQNR", node.dhtEngine.dht, node.type)
 			ip = get_ip(node_name_from)
 			send(payload, ip)
 		if payload_type == 'CRQNR':
 			print("Received payload CRQNR")
 			add_neighbour(node_name_from)
 			# dht_ip = get_dht_ip(node_name_from)
-			# send(node.dht, dht_ip)
+			# send(node.dhtEngine.dht, dht_ip)
 			# send final ok
 			#TODO
 			return ''
@@ -315,7 +315,7 @@ def neighbours():
 
 @app.route('/info', methods=['GET'])
 def info():
-	info = {"ids": node.ids, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours, "dht": node.dht, "lsdb": node.lsdb, "end_nodes": node.end_nodes}
+	info = {"ids": node.ids, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours, "dht": node.dhtEngine.dht, "lsdb": node.lsdb, "end_nodes": node.end_nodes}
 	return jsonify(info)
 
 @app.route('/lsa', methods=['GET'])
