@@ -10,15 +10,27 @@ class DHT:
 	def __init__(self):
 		self.dht = {}					# DHT table for PK and IP addresses
 		self.rb = 1						# Routing bytes, influced by total number of backbone nodes and total load
+		self.alpha_num_set = list("abcdefghijklmnopqrstuvwxyz0123456789")
 
 
-	def recursive_bytes(self, rb):
+	# def recursive_bytes(self, rb):
+	#
+	# 	for rr in rb:
+	#
+	# 		for index in alpha:
 
-		for rr in rb:
+	def increment(self, element):
 
-			for index in alpha:
+		index = self.alpha_num_set.index(element)
 
-	def alphaget(self, number, start_point):
+		# Last element, we cant increment, but should not reach!
+		if index == 35:
+			print("Should not reach!! End of array")
+		else:
+			index += 1
+			return self.alpha_num_set[index]
+
+	def gen_next_key(self, bf, k):
 
 		# "216", "ax"
 		# = "gx"
@@ -32,7 +44,7 @@ class DHT:
 		# "2", "a9"
 		# "0", "ba"
 		## "+13", "bx
-		
+
 		# "+0", "ax"
 		# "+13", "ba"
 		# "+23", "bx
@@ -46,9 +58,32 @@ class DHT:
 		
 		to flip bit we do 36^x
 		
-		''''''
+		'''
 
-		 for a in alpha:
+		key = list(k)
+
+		buffer_size = bf
+
+		for i in len(key):
+
+			current_buffer_index = pow(36, len(key) - i)
+
+		# index = i
+		# while buffer_size > current_buffer_index:
+		# 	increment(key[i])
+		# 	bf =- current_buffer_index
+		# 	index += 1
+		# 	current_buffer_index = pow(36, index)
+		index = i
+		while buffer_size > current_buffer_index:
+			key[i] = self.increment(key[i])
+			buffer_size = - current_buffer_index
+			index += 1
+			current_buffer_index = pow(36, len(key) - index)
+
+		return key
+
+
 
 
 	# Forumula
