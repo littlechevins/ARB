@@ -11,96 +11,77 @@ class DHT:
 		self.dht = {}					# DHT table for PK and IP addresses
 		self.rb = 1						# Routing bytes, influced by total number of backbone nodes and total load
 		self.alpha_num_set = list("abcdefghijklmnopqrstuvwxyz0123456789")
+		self.num_nodes = 0
 
+	def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
+		"""Converts an integer to a base36 string."""
+		# if not isinstance(number, (int, long)):
+		# 	raise TypeError('number must be an integer')
 
-	# def recursive_bytes(self, rb):
-	#
-	# 	for rr in rb:
-	#
-	# 		for index in alpha:
+		base36 = ''
+		sign = ''
 
-	def increment(self, element):
+		if number < 0:
+			sign = '-'
+			number = -number
 
-		index = self.alpha_num_set.index(element)
+		if 0 <= number < len(alphabet):
+			return sign + alphabet[number]
 
-		# Last element, we cant increment, but should not reach!
-		if index == 35:
-			print("Should not reach!! End of array")
-		else:
-			index += 1
-			return self.alpha_num_set[index]
+		while number != 0:
+			number, i = divmod(number, len(alphabet))
+			base36 = alphabet[i] + base36
+
+		return sign + base36
+
+	def base36decode(number):
+		return int(number, 36)
+
+	def gen_next_key(bf, k):
+		key = base36decode(k)
+		return (base36encode(key + bf))
 
 	def gen_next_key(self, bf, k):
 
-		# "216", "ax"
-		# = "gx"
+		key = base36decode(k)
+		return (base36encode(key + bf))
 
-		# "10", "ax"
-		# "8", "az"
-		# "0", "a7"
+	def rebuild_dht(rb):
 
-		# "14, "ax"
-		# "12", "az"
-		# "2", "a9"
-		# "0", "ba"
-		## "+13", "bx
+		num_nodes = 4
 
-		# "+0", "ax"
-		# "+13", "ba"
-		# "+23", "bx
+		buffer = int(pow(36, rb) / num_nodes)
 
-		'''
-		1. look at last char and its position, calculate the number it would take to get to the next flip
-		
-		1. work out what it would take to flip x values, if that number is less than the given num then flip
-		eg. "ax", given "200", "ax", it would take 13 to flip to "ba", we minus 200-13 and if that number is still 
-		greater, we do again until its not. Then we go to next char, so we look at "a"
-		
-		to flip bit we do 36^x
-		
-		'''
+		next_key = '0' * rb
+		print(next_key)
 
-		key = list(k)
+		once_off = True
+		dht_array = []
+		dht_array.append(next_key)
 
-		buffer_size = bf
+		switch = True
 
-		for i in len(key):
+		for n in range(num_nodes * 2 - 1):
+			# print(buffer)
+			# print(next_key)
+			if switch:
+				next_key = gen_next_key(buffer, next_key, rb)
+				switch = False
+			else:
+				next_key = gen_next_key(1, next_key, rb)
+				switch = True
+			print(next_key)
+			dht_array.append(next_key)
 
-			current_buffer_index = pow(36, len(key) - i)
+		print(dht_array)
 
-		# index = i
-		# while buffer_size > current_buffer_index:
-		# 	increment(key[i])
-		# 	bf =- current_buffer_index
-		# 	index += 1
-		# 	current_buffer_index = pow(36, index)
-		index = i
-		while buffer_size > current_buffer_index:
-			key[i] = self.increment(key[i])
-			buffer_size = - current_buffer_index
-			index += 1
-			current_buffer_index = pow(36, len(key) - index)
+		dht = {}
 
-		return key
+		for index in range(0, len(dht_array) - 1, 2):
+			key = dht_array[index] + '-' + dht_array[index + 1]
+			dht[key] = 'NODE_X'
 
-
-
-
-	# Forumula
-
-	# (36^rb) / num nodes
-
-	# 6 nodes
-
-	# rb 1
-	#["node1" : "q8gl2nvsrt"] = abcde|fghijk|lmnopq|rstuvw|xyz012|3456789
-
-	# rb 2
-	#["node1": "q8gl2nvsrt"] = [abcdefghijklmnopqrstuvwxyz0123456789][abcdefghijklmnopqrstuvwxyz0123456789]
-	# = [q8-q9, ]
-
-
-
+		print(dht)
 
 
 

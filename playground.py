@@ -94,41 +94,111 @@ def increment(element):
 		index += 1
 		return alpha_num_set[index]
 
-def gen_next_key(bf, k):
+# def gen_next_key(bf, k):
+#
+# 	key = list(k)
+#
+# 	buffer_size = bf
+# 	final_key = ''
+# 	print("startinb buffer size {}".format(buffer_size))
+#
+# 	for i, char in enumerate(key):
+# 		current_buffer_index = pow(36, len(key) - i - 1)
+# 		# print(current_buffer_index)
+# 		print("at: {}".format(char))
+# 	# index = i
+# 	# while buffer_size > current_buffer_index:
+# 	# 	increment(key[i])
+# 	# 	bf =- current_buffer_index
+# 	# 	index += 1
+# 	# 	current_buffer_index = pow(36, index)
+# 		index = i
+# 		current_char = char
+# 		while buffer_size >= current_buffer_index:
+# 			print("yes")
+# 			print("current_buffer_index: {}".format(current_buffer_index))
+# 			print("current_char: {}".format(current_char))
+# 			print("original buffer size: {}".format(buffer_size))
+# 			current_char = increment(current_char)
+# 			buffer_size -= current_buffer_index
+# 			print("current_buffer_size_after: {}".format(buffer_size))
+# 			index += 1
+# 			# current_buffer_index = pow(36, len(key) - index - 1)
+# 			print("current_buffer_index_after: {}".format(current_buffer_index))
+#
+# 		final_key += current_char
+#
+# 	return final_key
 
-	key = list(k)
+def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
+	"""Converts an integer to a base36 string."""
+	# if not isinstance(number, (int, long)):
+	# 	raise TypeError('number must be an integer')
 
-	buffer_size = bf
-	final_key = ''
-	print("startinb buffer size {}".format(buffer_size))
+	base36 = ''
+	sign = ''
 
-	for i, char in enumerate(key):
-		current_buffer_index = pow(36, len(key) - i - 1)
-		# print(current_buffer_index)
-		print("at: {}".format(char))
-	# index = i
-	# while buffer_size > current_buffer_index:
-	# 	increment(key[i])
-	# 	bf =- current_buffer_index
-	# 	index += 1
-	# 	current_buffer_index = pow(36, index)
-		index = i
-		current_char = char
-		while buffer_size > current_buffer_index:
-			print("yes")
-			print("current_buffer_index: {}".format(current_buffer_index))
-			print("current_char: {}".format(current_char))
-			print("original buffer size: {}".format(buffer_size))
-			current_char = increment(current_char)
-			buffer_size -= current_buffer_index
-			print("current_buffer_size_after: {}".format(buffer_size))
-			index += 1
-			# current_buffer_index = pow(36, len(key) - index - 1)
-			print("current_buffer_index_after: {}".format(current_buffer_index))
+	if number < 0:
+		sign = '-'
+		number = -number
 
-		final_key += current_char
+	if 0 <= number < len(alphabet):
+		return sign + alphabet[number]
 
-	return final_key
+	while number != 0:
+		number, i = divmod(number, len(alphabet))
+		base36 = alphabet[i] + base36
+
+	return sign + base36
+
+def base36decode(number):
+	return int(number, 36)
+
+
+def gen_next_key(bf, k, rb):
+	key = base36decode(k)
+	encoded = base36encode(key+bf)
+	if len(encoded) > len(k):
+		return 'z' * rb
+	else:
+		return encoded
+
+def rebuild_dht(rb):
+
+	num_nodes = 4
+
+	buffer = int(pow(36, rb) / num_nodes)
+
+	next_key = '0' * rb
+	print(next_key)
+
+	once_off = True
+	dht_array = []
+	dht_array.append(next_key)
+
+	switch = True
+
+	for n in range(num_nodes*2 - 1):
+		# print(buffer)
+		# print(next_key)
+		if switch:
+			next_key = gen_next_key(buffer, next_key, rb)
+			switch = False
+		else:
+			next_key = gen_next_key(1, next_key, rb)
+			switch = True
+		print(next_key)
+		dht_array.append(next_key)
+
+	print(dht_array)
+
+	dht = {}
+
+	for index in range(0, len(dht_array) - 1, 2):
+		key =  dht_array[index] + '-' + dht_array[index+1]
+		dht[key] = 'TEMP'
+
+	print(dht)
 
 
 def main():
@@ -137,7 +207,17 @@ def main():
 	# keygen()
 	# randrange()
 	# print(increment('9'))
-	print(gen_next_key(35, 'abcd'))
+	# print(gen_next_key(35, 'abcd'))
+
+	# 1234
+
+	# print(base36encode(481261+35))
+	# print(base36decode('abcd'))
+	# print(gen_next_key(1000, 'abcd'))
+	# key = 'a' * 3
+	# if ('aaa' == key):
+	# 	print("true")
+	rebuild_dht(1)
 
 if __name__ == "__main__":
 	main()
