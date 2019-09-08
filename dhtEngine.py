@@ -13,7 +13,7 @@ class DHT:
 		self.alpha_num_set = list("abcdefghijklmnopqrstuvwxyz0123456789")
 		self.num_nodes = 0
 
-	def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
+	def base36encode(self, number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
 		"""Converts an integer to a base36 string."""
 		# if not isinstance(number, (int, long)):
 		# 	raise TypeError('number must be an integer')
@@ -34,26 +34,29 @@ class DHT:
 
 		return sign + base36
 
-	def base36decode(number):
-		return int(number, 36)
+	def base36decode(self, number):
+		return int(self, number, 36)
 
-	def gen_next_key(bf, k):
-		key = base36decode(k)
-		return (base36encode(key + bf))
+
+	def gen_next_key(self, bf, k):
+		key = self.base36decode(k)
+		return (self.base36encode(key + bf))
+
 
 	def gen_next_key(self, bf, k):
 
-		key = base36decode(k)
-		return (base36encode(key + bf))
+		key = self.base36decode(k)
+		return (self.base36encode(key + bf))
 
-	def rebuild_dht(rb):
 
-		num_nodes = 4
+	def rebuild_dht(self, backbone_nodes):
 
-		buffer = int(pow(36, rb) / num_nodes)
+		num_nodes = self.num_nodes
 
-		next_key = '0' * rb
-		print(next_key)
+		buffer = int(pow(36, self.rb) / num_nodes)
+
+		next_key = '0' * self.rb
+		# print(next_key)
 
 		once_off = True
 		dht_array = []
@@ -65,28 +68,29 @@ class DHT:
 			# print(buffer)
 			# print(next_key)
 			if switch:
-				next_key = gen_next_key(buffer, next_key, rb)
+				next_key = self.gen_next_key(buffer, next_key, self.rb)
 				switch = False
 			else:
-				next_key = gen_next_key(1, next_key, rb)
+				next_key = self.gen_next_key(1, next_key, self.rb)
 				switch = True
-			print(next_key)
+			# print(next_key)
 			dht_array.append(next_key)
 
-		print(dht_array)
+		# print(dht_array)
 
 		dht = {}
 
+		key_count = 0
 		for index in range(0, len(dht_array) - 1, 2):
 			key = dht_array[index] + '-' + dht_array[index + 1]
-			dht[key] = 'NODE_X'
-
-		print(dht)
-
+			dht[key] = backbone_nodes[key_count]
+			key_count += 1
+		# print(dht)
+		self.dht = dht
 
 
 	# Rebalanced everytime a new node joins
-	def rebalance_dht(dht, backbone_nodes):
+	def rebalance_dht(self, dht, backbone_nodes):
 
 		alpha_num_set = "abcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -115,3 +119,20 @@ class DHT:
 				dht[node] = key
 			else:
 				raise ValueError("Could not locate {} node in dht table.".format(node))
+
+	def get_key_from_node_id(self, id):
+
+		id = self.base36decode(id[:self.rb])
+
+		for key in self.dht.keys():
+
+			lower, upper = key.split('-')
+
+			lower_decoded = self.base36decode(lower)
+			upper_decoded = self.base36decode(upper)
+
+			if lower_decoded <= id <= upper_decoded:
+				return self.dht[key]
+
+		return "ERROR"
+

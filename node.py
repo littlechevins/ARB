@@ -110,16 +110,13 @@ def get_key_from_id(id):
 
 
 
-def add_to_dht(node_id):
-
-
-	# add the key/node just to the first matching key, then rebalance dht
-	# first_char = node_id.charAt(0)
-	# key = get_key_from_id(node_id)
-	# node.dht[key] = node_id
-
-
-	return ""
+# def add_to_dht(self, node_id):
+#
+#
+# 	# add the key/node just to the first matching key, then rebalance dht
+# 	key = self.dhtEngine.get_key_from_node_id(node_id)
+#
+# 	return key
 
 def keygen():
 	hasher = hashlib.md5(get_random())
@@ -231,7 +228,9 @@ def receive():
 	# add received id to dht (only add when neighbourship is established)
 	# node.dhtEngine.dht[node_name_from] = get_key_from_id(node_name_from)
 
-
+	if received_node_type == 'backbone':
+		node.backbone_nodes.append(node_name_from)
+		node.dhtEngine.num_nodes += 1
 
 	# # generate own id (check if backbone phase)
 	# if node.id is None:
@@ -282,6 +281,11 @@ def receive():
 		if payload_type == 'CRQNR':
 			print("Received payload CRQNR")
 			add_neighbour(node_name_from)
+
+			if node.type == "backbone":
+				node.dhtEngine.rebuild_dht(node.backbone_nodes)
+
+
 			# dht_ip = get_dht_ip(node_name_from)
 			# send(node.dhtEngine.dht, dht_ip)
 			# send final ok
@@ -400,7 +404,7 @@ def find():
 	print("Received routing request")
 
 	data = request.get_json()
-	destination = data['dest']
+	destination = node.dhtEngine.get_key_from_node_id(data['dest'])
 	compare_dijk_length = []
 
 	payload = {'dest': destination}

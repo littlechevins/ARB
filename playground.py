@@ -5,6 +5,7 @@ import hashlib
 import random
 import string
 import base64
+from random import randrange
 
 import re
 
@@ -65,20 +66,20 @@ def keygen():
 		# ids.append(h1)
 		print("post sub: " + h1)
 
-def randrange():
-	for _ in range(0,10):
-		print(random.randrange(1,3))
-
-	def increment(self, element):
-
-		index = self.alpha_num_set.index(element)
-
-		# Last element, we cant increment, but should not reach!
-		if index == 35:
-			print("Should not reach!! End of array")
-		else:
-			index += 1
-			return self.alpha_num_set[index]
+# def randrange():
+# 	for _ in range(0,10):
+# 		print(random.randrange(1,3))
+#
+# 	def increment(self, element):
+#
+# 		index = self.alpha_num_set.index(element)
+#
+# 		# Last element, we cant increment, but should not reach!
+# 		if index == 35:
+# 			print("Should not reach!! End of array")
+# 		else:
+# 			index += 1
+# 			return self.alpha_num_set[index]
 
 def increment(element):
 
@@ -163,9 +164,7 @@ def gen_next_key(bf, k, rb):
 	else:
 		return encoded
 
-def rebuild_dht(rb):
-
-	num_nodes = 4
+def rebuild_dht(rb, backbone_nodes, num_nodes):
 
 	buffer = int(pow(36, rb) / num_nodes)
 
@@ -194,11 +193,30 @@ def rebuild_dht(rb):
 
 	dht = {}
 
+	key_count = 0
 	for index in range(0, len(dht_array) - 1, 2):
-		key =  dht_array[index] + '-' + dht_array[index+1]
-		dht[key] = 'TEMP'
+		key = dht_array[index] + '-' + dht_array[index+1]
+		dht[key] = backbone_nodes[key_count]
+		key_count += 1
 
 	print(dht)
+	return dht
+
+def get_key_from_node_id(id, rb, dht):
+
+	id = base36decode(id[:rb])
+
+	for key in dht.keys():
+
+		lower, upper = key.split('-')
+
+		lower_decoded = base36decode(lower)
+		upper_decoded = base36decode(upper)
+
+		if lower_decoded <= id <= upper_decoded:
+			return dht[key]
+
+	return "ERROR"
 
 
 def main():
@@ -217,7 +235,15 @@ def main():
 	# key = 'a' * 3
 	# if ('aaa' == key):
 	# 	print("true")
-	rebuild_dht(1)
+	rebuild_dht(1, ["Node_1", "Node_2", "Node_3", "Node_4"], 4)
+
+	# lower = 20
+	# upper = 29
+	# if lower <= 27 <= 29:
+	# 	print("TRUEEEE")
+	#
+	# print(get_key_from_node_id("g5", 2, rebuild_dht(2)))
+
 
 if __name__ == "__main__":
 	main()
