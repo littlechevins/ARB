@@ -35,21 +35,21 @@ class DHT:
 		return sign + base36
 
 	def base36decode(self, number):
-		return int(self, number, 36)
-
-
-	def gen_next_key(self, bf, k):
-		key = self.base36decode(k)
-		return (self.base36encode(key + bf))
-
+		return int(number, 36)
 
 	def gen_next_key(self, bf, k):
 
 		key = self.base36decode(k)
-		return (self.base36encode(key + bf))
+		encoded = self.base36encode(key + bf)
+		if len(encoded) > len(k):
+			return 'z' * self.rb
+		else:
+			return encoded
 
 
 	def rebuild_dht(self, backbone_nodes):
+
+		print("Rebuilding dht with nodes: {}".format(backbone_nodes))
 
 		num_nodes = self.num_nodes
 
@@ -68,10 +68,10 @@ class DHT:
 			# print(buffer)
 			# print(next_key)
 			if switch:
-				next_key = self.gen_next_key(buffer, next_key, self.rb)
+				next_key = self.gen_next_key(buffer, next_key)
 				switch = False
 			else:
-				next_key = self.gen_next_key(1, next_key, self.rb)
+				next_key = self.gen_next_key(1, next_key)
 				switch = True
 			# print(next_key)
 			dht_array.append(next_key)
@@ -122,6 +122,8 @@ class DHT:
 
 	def get_key_from_node_id(self, id):
 
+		print("Current dht is: {}".format(self.dht))
+
 		id = self.base36decode(id[:self.rb])
 
 		for key in self.dht.keys():
@@ -134,5 +136,5 @@ class DHT:
 			if lower_decoded <= id <= upper_decoded:
 				return self.dht[key]
 
-		return "ERROR"
+		return "NO KEY FOUND IN DHT"
 

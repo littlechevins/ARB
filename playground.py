@@ -235,7 +235,7 @@ def main():
 	# key = 'a' * 3
 	# if ('aaa' == key):
 	# 	print("true")
-	rebuild_dht(1, ["Node_1", "Node_2", "Node_3", "Node_4"], 4)
+	rebuild_dht(1, ["Node_1", "Node_2"], 2)
 
 	# lower = 20
 	# upper = 29

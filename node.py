@@ -198,8 +198,10 @@ def backbone():
 		# node.id = get_random()
 		# node.dht[get_key_from_id(node.id)] = node.id
 
+	node.backbone_nodes.append(node.node_name)
+
 	for neighbour in neighbours_list:
-		payload = create_payload(node.ids, node.node_name, current_neighbours, "IRQ", node.dhtEngine.dht, node.type)
+		payload = create_payload(node.ids, node.node_name, current_neighbours, "IRQ", node.dhtEngine.dht, node.type, node.backbone_nodes)
 		ip = get_ip(neighbour)
 		send(payload, ip)
 	print("STOP")
@@ -216,6 +218,8 @@ def receive():
 	node_id_from = data['node_ids']
 	node_name_from_arr = [node_name_from]
 
+
+
 	if 'dht' in data:
 		node_dht_from = data['dht']
 		# combine received dht with known
@@ -227,35 +231,23 @@ def receive():
 
 	# add received id to dht (only add when neighbourship is established)
 	# node.dhtEngine.dht[node_name_from] = get_key_from_id(node_name_from)
+	if 'backbone_nodes' in data:
+		received_backbone_nodes = data['backbone_nodes']
 
-	if received_node_type == 'backbone':
-		node.backbone_nodes.append(node_name_from)
-		node.dhtEngine.num_nodes += 1
-
-	# # generate own id (check if backbone phase)
-	# if node.id is None:
-	# 	# get all keys in list, compare
-	# 	# can infinite loop
-	# 	guard = 10000
-	# 	while True:
-	# 		new_id = get_id()
-	# 		new_key = get_key_from_id(new_id)
-	# 		guard =- 1
-	# 		if guard <= 0:
-	# 			print("Cant generate unique id")
-	# 			break
-	# 		if new_key not in node_dht_from:
-	# 			node.id = new_id
-	# 			node.dhtEngine.dht[get_key_from_id(node.id)] = node.id
-	# 			break
+		if received_node_type == 'backbone':
+			node.backbone_nodes = merge_two_arrays(received_backbone_nodes, node.backbone_nodes)
+			node.dhtEngine.num_nodes += 1
 
 	if 'type' in data:
 		payload_type = data['type']
 
 		if payload_type == 'IRQ':
+
+			# node.dhtEngine.rebuild_dht(node.backbone_nodes)
+
 			print("Received payload IRQ")
 			# reply with IRQNR
-			payload = create_payload(node.ids, node.node_name, node_name_from_arr, "IRQNR", node.dhtEngine.dht, node.type)
+			payload = create_payload(node.ids, node.node_name, node_name_from_arr, "IRQNR", node.dhtEngine.dht, node.type, node.backbone_nodes)
 			ip = get_ip(node_name_from)
 			send(payload, ip)
 		if payload_type == 'IRQNR':
@@ -273,18 +265,21 @@ def receive():
 
 			# dht_ip = get_dht_ip(node_name_from)
 			# send(node.dhtEngine.dht, dht_ip)
+			# node.dhtEngine.rebuild_dht(node.backbone_nodes)
 
 			# reply with CRQNR
-			payload = create_payload(node.ids, node.node_name, node_name_from_arr, "CRQNR", node.dhtEngine.dht, node.type)
+			payload = create_payload(node.ids, node.node_name, node_name_from_arr, "CRQNR", node.dhtEngine.dht, node.type, node.backbone_nodes)
 			ip = get_ip(node_name_from)
 			send(payload, ip)
 		if payload_type == 'CRQNR':
 			print("Received payload CRQNR")
 			add_neighbour(node_name_from)
 
-			if node.type == "backbone":
-				node.dhtEngine.rebuild_dht(node.backbone_nodes)
-
+			# if node.type == "backbone":
+			node.dhtEngine.rebuild_dht(node.backbone_nodes)
+			#TODO
+			# Now send out the rebuild dht signal, effectively replaces their dht with yours
+			# Maybe not if we just insert the node names in order after creating dht
 
 			# dht_ip = get_dht_ip(node_name_from)
 			# send(node.dhtEngine.dht, dht_ip)
@@ -319,7 +314,7 @@ def neighbours():
 
 @app.route('/info', methods=['GET'])
 def info():
-	info = {"ids": node.ids, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours, "dht": node.dhtEngine.dht, "lsdb": node.lsdb, "end_nodes": node.end_nodes}
+	info = {"ids": node.ids, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours, "dht": node.dhtEngine.dht, "lsdb": node.lsdb, "end_nodes": node.end_nodes, "backbone_nodes": node.backbone_nodes}
 	return jsonify(info)
 
 @app.route('/lsa', methods=['GET'])
@@ -328,7 +323,7 @@ def lsa():
 	# dont advertise self if not backbone node
 
 	# create payload,
-	lsa_payload = {'node_ids': node.ids, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb, 'node_type': node.type}
+	lsa_payload = {'node_ids': node.ids, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb, 'node_type': node.type, 'backbone_nodes': node.backbone_nodes}
 
 	# begin flooding
 	for neighbour in node.neighbours:
@@ -404,8 +399,12 @@ def find():
 	print("Received routing request")
 
 	data = request.get_json()
+
+	print("Data received: {}".format(data))
+
 	destination = node.dhtEngine.get_key_from_node_id(data['dest'])
 	compare_dijk_length = []
+	print("Destination calculated: {}".format(destination))
 
 	payload = {'dest': destination}
 
@@ -501,8 +500,8 @@ def keys():
 
 
 
-def create_payload(node_ids, node_name, neighbours, rq, dht, type):
-	payload = {'node_ids': node_ids, 'node_name': node_name, 'neighbours': neighbours, 'type': rq, 'dht': dht, 'node_type': node.type}
+def create_payload(node_ids, node_name, neighbours, rq, dht, type, backbone_nodes):
+	payload = {'node_ids': node_ids, 'node_name': node_name, 'neighbours': neighbours, 'type': rq, 'dht': dht, 'node_type': node.type, 'backbone_nodes': backbone_nodes}
 	return payload
 
 def send(payload, ip):
