@@ -10,7 +10,7 @@ class DHT:
 	def __init__(self):
 		self.dht = {}					# DHT table for PK and IP addresses
 		self.rb = 1						# Routing bytes, influced by total number of backbone nodes and total load
-		self.alpha_num_set = list("abcdefghijklmnopqrstuvwxyz0123456789")
+		self.alpha_num_set = list("0123456789abcdefghijklmnopqrstuvwxyz")
 		self.num_nodes = 0
 
 	def base36encode(self, number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
@@ -41,10 +41,10 @@ class DHT:
 
 		key = self.base36decode(k)
 		encoded = self.base36encode(key + bf)
-		if len(encoded) > len(k):
-			return 'z' * self.rb
-		else:
-			return encoded
+		# if len(encoded) > len(k):
+		# 	return 'z' * self.rb
+		# else:
+		return encoded
 
 
 	def rebuild_dht(self, backbone_nodes):
@@ -53,7 +53,7 @@ class DHT:
 
 		num_nodes = self.num_nodes
 
-		buffer = int(pow(36, self.rb) / num_nodes)
+		buffer = int(pow(36, self.rb) / num_nodes) - 1
 
 		next_key = '0' * self.rb
 		# print(next_key)
@@ -77,6 +77,7 @@ class DHT:
 			dht_array.append(next_key)
 
 		# print(dht_array)
+		dht_array[-1] = 'z' * self.rb
 
 		dht = {}
 
@@ -92,7 +93,7 @@ class DHT:
 	# Rebalanced everytime a new node joins
 	def rebalance_dht(self, dht, backbone_nodes):
 
-		alpha_num_set = "abcdefghijklmnopqrstuvwxyz0123456789"
+		alpha_num_set = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 		# dht_count = len(node.dht)
 		dht_count = len(backbone_nodes)
