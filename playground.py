@@ -166,7 +166,7 @@ def gen_next_key(bf, k, rb):
 
 def rebuild_dht(rb, backbone_nodes, num_nodes):
 
-	buffer = int(pow(36, rb) / num_nodes)
+	buffer = int(pow(36, rb) / num_nodes) - 1
 
 	next_key = '0' * rb
 	print(next_key)
@@ -235,7 +235,7 @@ def main():
 	# key = 'a' * 3
 	# if ('aaa' == key):
 	# 	print("true")
-	rebuild_dht(1, ["Node_1", "Node_2"], 2)
+	rebuild_dht(1, ["A", "B", "C", "D", "E", "F"], 5)
 
 	# lower = 20
 	# upper = 29
