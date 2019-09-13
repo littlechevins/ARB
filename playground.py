@@ -159,10 +159,10 @@ def base36decode(number):
 def gen_next_key(bf, k, rb):
 	key = base36decode(k)
 	encoded = base36encode(key+bf)
-	if len(encoded) > len(k):
-		return 'z' * rb
-	else:
-		return encoded
+	# if len(encoded) > len(k):
+	# 	return 'z' * rb
+	# else:
+	return encoded
 
 def rebuild_dht(rb, backbone_nodes, num_nodes):
 
@@ -171,7 +171,6 @@ def rebuild_dht(rb, backbone_nodes, num_nodes):
 	next_key = '0' * rb
 	print(next_key)
 
-	once_off = True
 	dht_array = []
 	dht_array.append(next_key)
 
@@ -188,6 +187,8 @@ def rebuild_dht(rb, backbone_nodes, num_nodes):
 			switch = True
 		print(next_key)
 		dht_array.append(next_key)
+
+	dht_array[-1] = 'z' * rb
 
 	print(dht_array)
 
@@ -235,7 +236,8 @@ def main():
 	# key = 'a' * 3
 	# if ('aaa' == key):
 	# 	print("true")
-	rebuild_dht(1, ["A", "B", "C", "D", "E", "F"], 5)
+	arr = ["A", "B", "C", "D", "E", "F", "G", "F", "A", "B", "C", "D", "E", "F", "G", "F", "A", "B", "C", "D", "E", "F", "G", "F", "A", "B", "C", "D", "E", "F", "G", "F"]
+	rebuild_dht(1, arr, 12)
 
 	# lower = 20
 	# upper = 29
