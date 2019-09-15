@@ -13,6 +13,11 @@ class DHT:
 		self.alpha_num_set = list("0123456789abcdefghijklmnopqrstuvwxyz")
 		self.num_nodes = 0
 
+
+	@property
+	def _get_dht(self):
+		return self.dht
+
 	def base36encode(self, number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
 		"""Converts an integer to a base36 string."""
 		# if not isinstance(number, (int, long)):
@@ -80,14 +85,14 @@ class DHT:
 		dht_array[-1] = 'z' * self.rb
 
 		dht = {}
-		print("len of dht array: {}".format(len(dht_array)))
-		print("dht array: {}".format(dht_array))
+		# print("len of dht array: {}".format(len(dht_array)))
+		# print("dht array: {}".format(dht_array))
 		key_count = 0
 		for index in range(0, len(dht_array) - 1, 2):
 			key = dht_array[index] + '-' + dht_array[index + 1]
-			print("key count: {}".format(key_count))
-			print("backbone_nodes: {}".format(backbone_nodes))
-			print("num_nodes: {}".format(num_nodes))
+			# print("key count: {}".format(key_count))
+			# print("backbone_nodes: {}".format(backbone_nodes))
+			# print("num_nodes: {}".format(num_nodes))
 			dht[key] = backbone_nodes[key_count]
 			key_count += 1
 		# print(dht)

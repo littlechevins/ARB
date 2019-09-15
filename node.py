@@ -51,13 +51,18 @@ class Node:
 		self.type = type
 		self.seqn = 0 				# sequence number for lsa
 		self.lsdb = {}
-
-		self.end_nodes = {}
-
-		self.backbone_nodes = []
-		self.associated_bnode = None	# String name of bnode, only applies for normal node
+		self.backbone_nodes = []		# List of all bnodes
 
 		self.dhtEngine = DHT()
+
+		self.threadhold = {}
+
+		# Only enodes
+		self.associated_bnodes = []		# Contains a list of bnodes and id pair related
+
+		# Only bnodes
+		self.end_nodes = []				# Contains a list of its enodes that have a id key pair
+
 
 
 
@@ -137,7 +142,6 @@ def keygen():
 @app.route("/setup")
 def setup():
 
-
 	with open('tables/node_info.json') as node_info:
 		node_info_json = json.load(node_info)
 		node.type = node_info_json[node.node_name]["node_type"]
@@ -145,14 +149,18 @@ def setup():
 
 		print("Setup phase, node type: {}".format(node.type))
 
-		if(node.type == 'end'):
-			# Let node have a random amount of pk's, or take from file?
-			num_pk = random.randrange(1,3)
+	# Setup associated nodes
+	with open('tables/associated_bnode.json') as node_info:
+		node_info_json = json.load(node_info)
 
-			for x in range(0, num_pk):
+		if(node.type == 'end'):
+
+			node.associated_bnodes = node_info_json[node.node_name]
+
+			for bnode in node.associated_bnodes:
 				key = keygen()
 				print("generated key: {}".format(key))
-				node.ids.append(key)
+				node.ids.append({bnode: key})
 
 			# node.id = node_info_json[node.node_name]["node_ids"][0]
 		elif(node.type == 'backbone'):
@@ -212,7 +220,7 @@ def receive():
 
 
 	data = request.get_json()
-	print("yeeeee: {}".format(json.dumps(data)))
+	# print("yeeeee: {}".format(json.dumps(data)))
 
 	node_name_from = data['node_name']
 	node_id_from = data['node_ids']
@@ -220,10 +228,10 @@ def receive():
 
 
 
-	if 'dht' in data:
-		node_dht_from = data['dht']
+	# if 'dht' in data:
+	# 	node_dht_from = data['dht']
 		# combine received dht with known
-		node.dhtEngine.dht = merge_two_dicts(node_dht_from, node.dhtEngine.dht)
+		# node.dhtEngine.dht = merge_two_dht(node_dht_from, node.dhtEngine.dht)
 
 	if 'node_type' in data:
 		print("found node_type in data, is {}".format(data['node_type']))
@@ -236,7 +244,7 @@ def receive():
 
 		if received_node_type == 'backbone':
 			node.backbone_nodes = merge_two_arrays(received_backbone_nodes, node.backbone_nodes)
-			node.dhtEngine.num_nodes += 1
+			node.dhtEngine.num_nodes = len(node.backbone_nodes)
 
 	if 'type' in data:
 		payload_type = data['type']
@@ -258,7 +266,28 @@ def receive():
 				print("RECEVIED MESSAGE FROM END NODE {}".format(node_name_from))
 				# check if doesnt already exist
 				if node_name_from not in node.end_nodes:
-					node.end_nodes[node_name_from] = node_id_from
+					# node.end_nodes[node_name_from] = node_id_from
+
+					#     "end_nodes": [
+					#         [{
+					#             "node_1": "n7kynysvai"
+					#         }],
+					#         [{
+					#             "node_1": "g5wcsqugu"
+					#         }, {
+					#             "node_4": "fxgja6k6y2"
+					#         }]
+
+					list_of_end_nodes = []
+					keys = None
+					for dicts in node_id_from:
+						keys = dicts.keys()
+						for key in keys:
+							if key == node.node_name:
+								list_of_end_nodes.append(dicts[key])
+
+					dd = {node_name_from: list_of_end_nodes}
+					node.end_nodes.append(dd)
 
 			# add to known neighbours
 			add_neighbour(node_name_from)
@@ -277,9 +306,6 @@ def receive():
 
 			# if node.type == "backbone":
 			node.dhtEngine.rebuild_dht(node.backbone_nodes)
-			#TODO
-			# Now send out the rebuild dht signal, effectively replaces their dht with yours
-			# Maybe not if we just insert the node names in order after creating dht
 
 			# dht_ip = get_dht_ip(node_name_from)
 			# send(node.dhtEngine.dht, dht_ip)
@@ -311,10 +337,18 @@ def receive():
 def neighbours():
 	return jsonify(node.neighbours)
 
+@app.route('/rebalance', methods=['GET'])
+def manual_rebalance():
+
+	node.dhtEngine.num_nodes = len(node.backbone_nodes)
+	node.dhtEngine.rebuild_dht(node.backbone_nodes)
+	return json.dumps({'success': 'rebalance'})
 
 @app.route('/info', methods=['GET'])
 def info():
-	info = {"ids": node.ids, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours, "dht": node.dhtEngine.dht, "lsdb": node.lsdb, "end_nodes": node.end_nodes, "backbone_nodes": node.backbone_nodes}
+	info = {"ids": node.ids, "nodename": node.node_name, "type": node.type, "neighbours": node.neighbours,
+			"dht": node.dhtEngine.dht, "lsdb": node.lsdb, "end_nodes": node.end_nodes,
+			"backbone_nodes": node.backbone_nodes, "associated_bnodes": node.associated_bnodes}
 	return jsonify(info)
 
 @app.route('/lsa', methods=['GET'])
@@ -366,12 +400,6 @@ def contains(key):
 	if key in keys:
 		return node_id
 
-# @app.route('/ping', methods=['GET'])
-# def ping():
-# 	# node = (self.node_id, self.node_ip)
-# 	# str = ','.join(node)
-# 	# return str
-# 	return read_table()
 
 @app.route('/graph', methods=['GET', 'POST'])
 def lsdb_to_graph():
@@ -381,7 +409,7 @@ def lsdb_to_graph():
 
 	data = request.get_json()
 	if data:
-		print("yeeeee: {}".format(json.dumps(data)))
+		# print("yeeeee: {}".format(json.dumps(data)))
 		start = data[0]
 		dest = data[1]
 
@@ -403,15 +431,22 @@ def find():
 	print("Data received: {}".format(data))
 
 	destination = node.dhtEngine.get_key_from_node_id(data['dest'])
+	origin =  data['dest']
+
 	compare_dijk_length = []
 	print("Destination calculated: {}".format(destination))
 
-	payload = {'dest': destination}
+	payload = {'origin': data['origin'], 'dest': destination}
 
 	# TODO change to node.id after intergration of dht
 	if destination == node.node_name:
 		# destination in node.ids
-		print("Received full package")
+		# print("Received full package")
+		if origin in node.threadhold:
+			node.threadhold[origin] += 1
+		else:
+			node.threadhold[origin] = 1
+
 		return "Received full package!"
 
 	# first check if end node is connected to this
@@ -444,6 +479,7 @@ def find():
 	shortest_path = shortest_path.split(',')
 	next_node = shortest_path[0]
 	print("next node is {}".format(next_node))
+
 	# we have reached a path of two nodes
 	if next_node == node.node_name:
 		print("next_node == node.node_name")
@@ -474,10 +510,6 @@ def dijkstra(start, dest):
 	shortest_path = graph.dijkstra(start, dest)
 	return shortest_path
 
-def keys():
-	'''
-	Returns all keys in all nodes
-	'''
 
 # @app.route('/db/<key>', methods=['GET'])
 # def get(key):
