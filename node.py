@@ -33,6 +33,9 @@ import string
 import base64
 from dhtEngine import DHT
 import re
+import threading
+from random import randrange
+
 
 import math
 
@@ -55,14 +58,14 @@ class Node:
 
 		self.dhtEngine = DHT()
 
-		self.threadhold = {}
+		self.threshold = {}
+		self.threshold_value = 0
 
 		# Only enodes
 		self.associated_bnodes = []		# Contains a list of bnodes and id pair related
 
 		# Only bnodes
 		self.end_nodes = []				# Contains a list of its enodes that have a id key pair
-
 
 
 
@@ -73,8 +76,11 @@ from flask import request
 import time
 import requests
 import argparse
-app = Flask(__name__)
 
+
+BACKBONE_INIT_DELAY = 0.0
+
+app = Flask(__name__)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--type", help="The type of node to spawn")
@@ -89,30 +95,11 @@ else:
 	node = Node(args.name, args.type)
 
 
-
 def get_random():
 	# random_data = os.urandom(128)
 	# return hashlib.md5(random_data).hexdigest()[:8]
 	x = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
 	return x
-
-def get_key_from_id(id):
-	# print("TYPE!!!")
-	# print(type(id))
-	rb = id[0]
-
-	if rb.isdigit():
-		return '0-9'
-	elif ord(rb) in range(ord('a'), ord('f')+1):
-		return 'a-f'
-	elif ord(rb) in range(ord('g'), ord('l')+1):
-		return 'g-l'
-	elif ord(rb) in range(ord('m'), ord('z')+1):
-		return 'm-z'
-	else:
-		print('bad key from id: {}'.format(rb))
-		return 'BAD'
-
 
 
 # def add_to_dht(self, node_id):
@@ -175,6 +162,9 @@ def setup():
 
 @app.route("/")
 def backbone():
+
+	print("Establishing backbones...")
+
 	# create the backbone nodes
 
 	# gets all neighbours, reads from table
@@ -212,8 +202,26 @@ def backbone():
 		payload = create_payload(node.ids, node.node_name, current_neighbours, "IRQ", node.dhtEngine.dht, node.type, node.backbone_nodes)
 		ip = get_ip(neighbour)
 		send(payload, ip)
-	print("STOP")
+		# time.sleep(0.1)
+	# print("STOP")
+
+	print("Starting LSA...")
+
+	# timer = threading.Timer(BACKBONE_INIT_DELAY, double_lsa)
+	# timer.start()
+
+	# r = randrange(10)
+	# time.sleep(r)
+	# for _ in range(0, 10):
+	# 	r2 = randrange(2)
+	# 	time.sleep(r2)
+	# 	lsa()
+	lsa(False)
+	lsa(True)
+
+
 	return "DONE"
+
 
 @app.route('/receive', methods=['POST'])
 def receive():
@@ -243,7 +251,8 @@ def receive():
 		received_backbone_nodes = data['backbone_nodes']
 
 		if received_node_type == 'backbone':
-			node.backbone_nodes = merge_two_arrays(received_backbone_nodes, node.backbone_nodes)
+			# node.backbone_nodes = merge_two_arrays(received_backbone_nodes, node.backbone_nodes)
+			merge_into_backbone_nodes(received_backbone_nodes)
 			node.dhtEngine.num_nodes = len(node.backbone_nodes)
 
 	if 'type' in data:
@@ -263,7 +272,7 @@ def receive():
 
 			# check if sender is end node
 			if received_node_type and received_node_type == 'end':
-				print("RECEVIED MESSAGE FROM END NODE {}".format(node_name_from))
+				print("RECEIVED MESSAGE FROM END NODE {}".format(node_name_from))
 				# check if doesnt already exist
 				if node_name_from not in node.end_nodes:
 					# node.end_nodes[node_name_from] = node_id_from
@@ -351,18 +360,26 @@ def info():
 			"backbone_nodes": node.backbone_nodes, "associated_bnodes": node.associated_bnodes}
 	return jsonify(info)
 
-@app.route('/lsa', methods=['GET'])
-def lsa():
+# @app.route('/lsa', methods=['GET'])
+def lsa(direction):
 	# begin linked state advertisement
 	# dont advertise self if not backbone node
 
 	# create payload,
 	lsa_payload = {'node_ids': node.ids, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb, 'node_type': node.type, 'backbone_nodes': node.backbone_nodes}
-
+	print("my neighbours {}".format(node.neighbours))
 	# begin flooding
-	for neighbour in node.neighbours:
-		ip = get_ip(neighbour)
-		send(lsa_payload, ip)
+
+	if direction:
+		for neighbour in node.neighbours:
+			ip = get_ip(neighbour)
+			print("LSDB sending to {} with payload {}".format(ip, lsa_payload))
+			send(lsa_payload, ip)
+	else:
+		for neighbour in reversed(node.neighbours):
+			ip = get_ip(neighbour)
+			print("LSDB sending to {} with payload {}".format(ip, lsa_payload))
+			send(lsa_payload, ip)
 	return ''
 
 def merge_two_dicts(x, y):
@@ -378,6 +395,13 @@ def merge_two_arrays(x, y):
 	result = x + list(in_second_but_not_in_first)
 	return result
 
+def merge_into_backbone_nodes(y):
+	for element in y:
+		if element not in node.backbone_nodes:
+			node.backbone_nodes.append(element)
+
+
+
 def add_neighbour(potential_neighbour):
 
 	# my_neighbours = []
@@ -389,16 +413,6 @@ def add_neighbour(potential_neighbour):
 	if potential_neighbour not in node.neighbours:
 		node.neighbours.append(potential_neighbour)
 
-
-def read_table():
-	with open('finger_table_node_1.txt') as json_file:
-		data = json.load(json_file)
-		return json.dumps(data)
-
-def contains(key):
-	keys = read_table()
-	if key in keys:
-		return node_id
 
 
 @app.route('/graph', methods=['GET', 'POST'])
@@ -437,6 +451,18 @@ def find():
 	print("Destination calculated: {}".format(destination))
 
 	payload = {'origin': data['origin'], 'dest': destination}
+
+
+	# # Threadhold
+	# print("node.threshold[origin] {}".format(node.threshold[origin]))
+	# if origin in node.threshold:
+	# 	if node.threshold[origin] < node.threshold_value:
+	# 		node.threshold[origin] += 1
+	# 	else:
+	# 		raise ValueError("Threshold reached! Value of {} in node {}.".format(node.threshold[origin], origin))
+	# else:
+	# 	node.threshold[origin] = 1
+
 
 	# TODO change to node.id after intergration of dht
 	if destination == node.node_name:
@@ -565,6 +591,14 @@ def get_dht_ip(node_id):
 		if node_id in data:
 			return 'http://127.0.0.1:' + str(data[node_id]) + '/receive/dht'
 
+def double_lsa():
+
+	timer = threading.Timer(BACKBONE_INIT_DELAY, lsa)
+	timer.start()
+
+	lsa()
+
+
 def put(key):
 	'''
 	Inserts key into DHT, returns True/False for error handling
@@ -597,4 +631,8 @@ if __name__ == '__main__':
 	else:
 		node = Node(args.name, args.type)
 
+	print("Setting up node...")
+	setup()
+
+	print("Establishing network...")
 	app.run(host='localhost', port=int(args.ip), threaded=True)
