@@ -18,7 +18,9 @@
 
 # Bugs:
 # Proper reporting
-# No link is considered to have been correctly reported unless the two ends agree; i.e., if one node reports that it is connected to another, but the other node does not report that it is connected to the first, there is a problem, and the link is not included on the map.
+# No link is considered to have been correctly reported unless the two ends agree; i.e., if one node reports that it
+# is connected to another, but the other node does not report that it is connected to the first, there is a problem,
+# and the link is not included on the map.
 
 
 
@@ -67,7 +69,8 @@ class Node:
 		# Only bnodes
 		self.end_nodes = []				# Contains a list of its enodes that have a id key pair
 
-
+		self._BACKBONE_INIT_DELAY = 0.0
+		self._URL_BASE = 'http://127.0.0.1:'
 
 import json
 from flask import jsonify
@@ -77,8 +80,6 @@ import time
 import requests
 import argparse
 
-
-BACKBONE_INIT_DELAY = 0.0
 
 app = Flask(__name__)
 
@@ -118,14 +119,6 @@ def keygen():
 	return h1
 
 
-# def manual_assign(self):
-# 	# key_ranges = ['0-9', 'a-f', 'g-l', 'm-z']
-# 	random_assign = random.randint(0,3)
-#
-# 	if random_assign == 0:
-# 		id = str(get_id())
-# 		if id.index(0)
-
 @app.route("/setup")
 def setup():
 
@@ -140,7 +133,7 @@ def setup():
 	with open('tables/associated_bnode.json') as node_info:
 		node_info_json = json.load(node_info)
 
-		if(node.type == 'end'):
+		if node.type == 'end':
 
 			node.associated_bnodes = node_info_json[node.node_name]
 
@@ -150,7 +143,7 @@ def setup():
 				node.ids.append({bnode: key})
 
 			# node.id = node_info_json[node.node_name]["node_ids"][0]
-		elif(node.type == 'backbone'):
+		elif node.type == 'backbone':
 			# node.id = None
 			pass
 		else:
@@ -180,13 +173,6 @@ def backbone():
 	# 	return "yes"
 
 
-	# payload types:
-	# IRQN - initial request neighbour - sends self id to neighbours
-	# IRQNR - initial request neighbour reply - sends self id and known neighbours - R1 becomes 2way
-	# CRQNR - confirm request neighbour reply - sends self id and known neighbours - R2 becomes 2way
-
-	# LSA - linked state adver
-
 	# send hello signal to neighbour to establish 2-way connection
 	current_neighbours = []
 
@@ -207,7 +193,7 @@ def backbone():
 
 	print("Starting LSA...")
 
-	# timer = threading.Timer(BACKBONE_INIT_DELAY, double_lsa)
+	# timer = threading.Timer(node.BACKBONE_INIT_DELAY, double_lsa)
 	# timer.start()
 
 	# r = randrange(10)
@@ -226,14 +212,23 @@ def backbone():
 @app.route('/receive', methods=['POST'])
 def receive():
 
+	'''
+
+	:return:
+
+	# payload types:
+	# IRQN - initial request neighbour - sends self id to neighbours
+	# IRQNR - initial request neighbour reply - sends self id and known neighbours - R1 becomes 2way
+	# CRQNR - confirm request neighbour reply - sends self id and known neighbours - R2 becomes 2way
+	# LSA - linked state advertisement
+
+	'''
 
 	data = request.get_json()
-	# print("yeeeee: {}".format(json.dumps(data)))
 
 	node_name_from = data['node_name']
 	node_id_from = data['node_ids']
 	node_name_from_arr = [node_name_from]
-
 
 
 	# if 'dht' in data:
@@ -275,28 +270,14 @@ def receive():
 				print("RECEIVED MESSAGE FROM END NODE {}".format(node_name_from))
 				# check if doesnt already exist
 				if node_name_from not in node.end_nodes:
-					# node.end_nodes[node_name_from] = node_id_from
-
-					#     "end_nodes": [
-					#         [{
-					#             "node_1": "n7kynysvai"
-					#         }],
-					#         [{
-					#             "node_1": "g5wcsqugu"
-					#         }, {
-					#             "node_4": "fxgja6k6y2"
-					#         }]
-
 					list_of_end_nodes = []
-					keys = None
 					for dicts in node_id_from:
 						keys = dicts.keys()
 						for key in keys:
 							if key == node.node_name:
 								list_of_end_nodes.append(dicts[key])
 
-					dd = {node_name_from: list_of_end_nodes}
-					node.end_nodes.append(dd)
+					node.end_nodes.append({node_name_from: list_of_end_nodes})
 
 			# add to known neighbours
 			add_neighbour(node_name_from)
@@ -380,7 +361,7 @@ def lsa(direction):
 			ip = get_ip(neighbour)
 			print("LSDB sending to {} with payload {}".format(ip, lsa_payload))
 			send(lsa_payload, ip)
-	return ''
+	return json.dumps({'success': 'lsa_send'})
 
 def merge_two_dicts(x, y):
     z = x.copy()   # start with x's keys and values
@@ -403,12 +384,6 @@ def merge_into_backbone_nodes(y):
 
 
 def add_neighbour(potential_neighbour):
-
-	# my_neighbours = []
-	#
-	# for n in node.neighbours:
-	# 	key = n.keys()[0]
-	# 	my_neighbours.append(key)
 
 	if potential_neighbour not in node.neighbours:
 		node.neighbours.append(potential_neighbour)
@@ -463,15 +438,11 @@ def find():
 	# else:
 	# 	node.threshold[origin] = 1
 
-
-	# TODO change to node.id after intergration of dht
 	if destination == node.node_name:
-		# destination in node.ids
-		# print("Received full package")
-		if origin in node.threadhold:
-			node.threadhold[origin] += 1
+		if origin in node.threshold:
+			node.threshold[origin] += 1
 		else:
-			node.threadhold[origin] = 1
+			node.threshold[origin] = 1
 
 		return "Received full package!"
 
@@ -519,8 +490,6 @@ def find():
 
 
 
-
-
 def dijkstra(start, dest):
 	keys = node.lsdb.keys()
 	graph_array = []
@@ -537,26 +506,6 @@ def dijkstra(start, dest):
 	return shortest_path
 
 
-# @app.route('/db/<key>', methods=['GET'])
-# def get(key):
-# 	'''
-# 	Returns value stored at key
-# 	'''
-#
-# 	'''
-# 	get(k)
-# 	check if node has key return,
-# 	for all keys in my finger table
-# 		find closest key(ck) to k
-# 		query with find(ck)
-#
-# 	'''
-#
-# 	return key
-
-# TODO
-
-
 
 def create_payload(node_ids, node_name, neighbours, rq, dht, type, backbone_nodes):
 	payload = {'node_ids': node_ids, 'node_name': node_name, 'neighbours': neighbours, 'type': rq, 'dht': dht, 'node_type': node.type, 'backbone_nodes': backbone_nodes}
@@ -569,31 +518,32 @@ def send(payload, ip):
 	r = requests.post(ip, headers=headers, data=json.dumps(payload))
 	print("callback {}".format(r.status_code))
 	return ""
+	#TODO do we need this return?
 
 def get_ip(node_id):
 	# print("node id is: " + node_id)
 	with open('tables/ips.json') as json_file:
 		data = json.load(json_file)
 		if node_id in data:
-			return 'http://127.0.0.1:' + str(data[node_id]) + '/receive'
+			return node._URL_BASE + str(data[node_id]) + '/receive'
 
 def get_routing_ip(node_id):
 	# print("node id is: " + node_id)
 	with open('tables/ips.json') as json_file:
 		data = json.load(json_file)
 		if node_id in data:
-			return 'http://127.0.0.1:' + str(data[node_id]) + '/find'
+			return node._URL_BASE + str(data[node_id]) + '/find'
 
 def get_dht_ip(node_id):
 	# print("node id is: " + node_id)
 	with open('tables/ips.json') as json_file:
 		data = json.load(json_file)
 		if node_id in data:
-			return 'http://127.0.0.1:' + str(data[node_id]) + '/receive/dht'
+			return node._URL_BASE + str(data[node_id]) + '/receive/dht'
 
 def double_lsa():
 
-	timer = threading.Timer(BACKBONE_INIT_DELAY, lsa)
+	timer = threading.Timer(node._BACKBONE_INIT_DELAY, lsa)
 	timer.start()
 
 	lsa()
@@ -614,10 +564,6 @@ def peers():
 	Displays all peers
 	'''
 
-def create_finger_table():
-	'''
-	Creates the lookup table for each node
-	'''
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()

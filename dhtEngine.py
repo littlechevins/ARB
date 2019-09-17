@@ -13,15 +13,13 @@ class DHT:
 		self.alpha_num_set = list("0123456789abcdefghijklmnopqrstuvwxyz")
 		self.num_nodes = 0
 
-
 	@property
 	def _get_dht(self):
 		return self.dht
 
-	def base36encode(self, number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
+	@staticmethod
+	def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
 		"""Converts an integer to a base36 string."""
-		# if not isinstance(number, (int, long)):
-		# 	raise TypeError('number must be an integer')
 
 		base36 = ''
 		sign = ''
@@ -39,18 +37,14 @@ class DHT:
 
 		return sign + base36
 
-	def base36decode(self, number):
+	@staticmethod
+	def base36decode(number):
 		return int(number, 36)
 
 	def gen_next_key(self, bf, k):
-
 		key = self.base36decode(k)
 		encoded = self.base36encode(key + bf)
-		# if len(encoded) > len(k):
-		# 	return 'z' * self.rb
-		# else:
 		return encoded
-
 
 	def rebuild_dht(self, backbone_nodes):
 
@@ -61,41 +55,29 @@ class DHT:
 		buffer = int(pow(36, self.rb) / num_nodes) - 1
 
 		next_key = '0' * self.rb
-		# print(next_key)
 
-		once_off = True
 		dht_array = []
 		dht_array.append(next_key)
 
 		switch = True
 
 		for n in range(num_nodes * 2 - 1):
-			# print(buffer)
-			# print(next_key)
 			if switch:
 				next_key = self.gen_next_key(buffer, next_key)
 				switch = False
 			else:
 				next_key = self.gen_next_key(1, next_key)
 				switch = True
-			# print(next_key)
 			dht_array.append(next_key)
 
-		# print(dht_array)
 		dht_array[-1] = 'z' * self.rb
 
 		dht = {}
-		# print("len of dht array: {}".format(len(dht_array)))
-		# print("dht array: {}".format(dht_array))
 		key_count = 0
 		for index in range(0, len(dht_array) - 1, 2):
 			key = dht_array[index] + '-' + dht_array[index + 1]
-			# print("key count: {}".format(key_count))
-			# print("backbone_nodes: {}".format(backbone_nodes))
-			# print("num_nodes: {}".format(num_nodes))
 			dht[key] = backbone_nodes[key_count]
 			key_count += 1
-		# print(dht)
 		self.dht = dht
 
 
