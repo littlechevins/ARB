@@ -168,7 +168,7 @@ def backbone():
 	# create the backbone nodes
 
 	# gets all neighbours, reads from table
-	with open('tables/backboneAndNormal.json') as json_file_backbone:
+	with open('tables/backbone.json') as json_file_backbone:
 		backbone_data = json.load(json_file_backbone)
 		# return jsonify(backbone_data)
 
@@ -190,20 +190,14 @@ def backbone():
 	# send hello signal to neighbour to establish 2-way connection
 	current_neighbours = []
 
-	# if node.id is None:
-		# generate id for self, send along
-		# node.id = get_id()
-		# node.id = get_random()
-		# node.dht[get_key_from_id(node.id)] = node.id
-
-	node.backbone_nodes.append(node.node_name)
+	if node.node_name not in node.backbone_nodes:
+		node.backbone_nodes.append(node.node_name)
+		manual_rebalance()
 
 	for neighbour in neighbours_list:
 		payload = create_payload(node.ids, node.node_name, current_neighbours, "IRQ", node.dhtEngine.dht, node.type, node.backbone_nodes)
 		ip = get_ip(neighbour)
 		send(payload, ip)
-		# time.sleep(0.1)
-	# print("STOP")
 
 	print("Starting LSA...")
 
@@ -218,7 +212,6 @@ def backbone():
 	# 	lsa()
 	lsa(False)
 	lsa(True)
-
 
 	return "DONE"
 
@@ -254,6 +247,7 @@ def receive():
 			# node.backbone_nodes = merge_two_arrays(received_backbone_nodes, node.backbone_nodes)
 			merge_into_backbone_nodes(received_backbone_nodes)
 			node.dhtEngine.num_nodes = len(node.backbone_nodes)
+			manual_rebalance()
 
 	if 'type' in data:
 		payload_type = data['type']
@@ -334,6 +328,10 @@ def receive():
 			else:
 				node.lsdb[node_name_from] = merge_two_arrays(node.lsdb[node_name_from], data['neighbours'])
 
+			if node_name_from not in node.backbone_nodes:
+				node.backbone_nodes.append(node_name_from)
+				manual_rebalance()
+
 			# now take lsdb of received and merge with own lsdb
 			for key in received_lsdb:
 				if key in node.lsdb.keys():
@@ -346,12 +344,12 @@ def receive():
 def neighbours():
 	return jsonify(node.neighbours)
 
-@app.route('/rebalance', methods=['GET'])
+# @app.route('/rebalance', methods=['GET'])
 def manual_rebalance():
 
 	node.dhtEngine.num_nodes = len(node.backbone_nodes)
 	node.dhtEngine.rebuild_dht(node.backbone_nodes)
-	return json.dumps({'success': 'rebalance'})
+	# return json.dumps({'success': 'rebalance'})
 
 @app.route('/info', methods=['GET'])
 def info():

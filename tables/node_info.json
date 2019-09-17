@@ -7,5 +7,6 @@
   "node_6": {"node_ip": 5006 , "node_ids": ["jawl2a2pde"], "node_type": "end"},
   "node_7": {"node_ip": 5007 , "node_ids": ["k1ao4f2lf3"], "node_type": "end"},
   "node_8": {"node_ip": 5008 , "node_ids": ["4lkfe19brs", "romvq2jf5ab"], "node_type": "end"},
-  "node_9": {"node_ip": 5009 , "node_ids": ["q8gl2nvsrt"], "node_type": "end"}
+  "node_9": {"node_ip": 5009 , "node_ids": ["q8gl2nvsrt"], "node_type": "end"},
+  "node_11": {"node_ip": 5011, "node_ids": [], "node_type":  "backbone"}
 }

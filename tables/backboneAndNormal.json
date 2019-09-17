@@ -7,5 +7,6 @@
     "node_6": ["node_3"],
     "node_7": ["node_3"],
     "node_8": ["node_1", "node_4"],
-    "node_9": ["node_4"]
+    "node_9": ["node_4"],
+    "node_11": ["node_4"]
 }

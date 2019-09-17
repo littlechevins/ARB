@@ -25,25 +25,10 @@ tell application "iTerm2"
       write text "echo exporting flask app"
       write text "python node.py -n node_5 -ip 5005 -t end"
     end tell
-    set newTab5 to (create tab with default profile)
-    tell current session of newTab5
+    set newTab11 to (create tab with default profile)
+    tell current session of newTab11
       write text "echo exporting flask app"
-      write text "python node.py -n node_6 -ip 5006 -t end"
-    end tell
-    set newTab6 to (create tab with default profile)
-    tell current session of newTab6
-      write text "echo exporting flask app"
-      write text "python node.py -n node_7 -ip 5007 -t end"
-    end tell
-    set newTab7 to (create tab with default profile)
-    tell current session of newTab7
-      write text "echo exporting flask app"
-      write text "python node.py -n node_8 -ip 5008 -t end"
-    end tell
-    set newTab8 to (create tab with default profile)
-    tell current session of newTab8
-      write text "echo exporting flask app"
-      write text "python node.py -n node_9 -ip 5009 -t end"
+      write text "python node.py -n node_11 -ip 5011 -t end"
     end tell
   end tell
 end tell
