@@ -48,6 +48,9 @@ class DHT:
 
 	def rebuild_dht(self, backbone_nodes):
 
+		if len(backbone_nodes) == 0:
+			return {}
+
 		print("Rebuilding dht with nodes: {}".format(backbone_nodes))
 
 		num_nodes = self.num_nodes

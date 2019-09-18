@@ -219,6 +219,10 @@ def get_key_from_node_id(id, rb, dht):
 
 	return "ERROR"
 
+def restructure_backbone(backbone_nodes):
+	backbone_nodes.sort(key=int)
+	return backbone_nodes
+
 
 def main():
 	print("Starting")
@@ -245,7 +249,10 @@ def main():
 	# 	print("TRUEEEE")
 	#
 	# print(get_key_from_node_id("g5", 2, rebuild_dht(2)))
-
+	my_list = ["5", "7", "4", "11", "1"]
+	# my_list = ["node_5", "node_7", "node_4", "node_11", "node_1"]
+	# my_list = [1, 5, 6, 7, 11,3, 5,7, 2, 8]
+	print(restructure_backbone(my_list))
 
 if __name__ == "__main__":
 	main()

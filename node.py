@@ -71,6 +71,7 @@ class Node:
 
 		self._BACKBONE_INIT_DELAY = 0.0
 		self._URL_BASE = 'http://127.0.0.1:'
+		self._TABLE_VERSION = '_europe'
 
 import json
 from flask import jsonify
@@ -122,33 +123,35 @@ def keygen():
 @app.route("/setup")
 def setup():
 
-	with open('tables/node_info.json') as node_info:
-		node_info_json = json.load(node_info)
-		node.type = node_info_json[node.node_name]["node_type"]
-		# node.ids = node_info_json[node.node_name]["node_ids"]
+	# open_file = 'tables/node_info' + node._TABLE_VERSION + '.json'
+	# with open(open_file) as node_info:
+	# 	node_info_json = json.load(node_info)
+	# 	node.type = node_info_json[node.node_name]["node_type"]
 
-		print("Setup phase, node type: {}".format(node.type))
+	print("Setup phase, node type: {}".format(node.type))
 
+	# TODO put this back
 	# Setup associated nodes
-	with open('tables/associated_bnode.json') as node_info:
-		node_info_json = json.load(node_info)
-
-		if node.type == 'end':
-
-			node.associated_bnodes = node_info_json[node.node_name]
-
-			for bnode in node.associated_bnodes:
-				key = keygen()
-				print("generated key: {}".format(key))
-				node.ids.append({bnode: key})
-
-			# node.id = node_info_json[node.node_name]["node_ids"][0]
-		elif node.type == 'backbone':
-			# node.id = None
-			pass
-		else:
-			print("ERROR, no type found")
-			return ""
+	# open_file = 'tables/associated_bnode' + node._TABLE_VERSION + '.json'
+	# with open(open_file) as node_info:
+	# 	node_info_json = json.load(node_info)
+	#
+	# 	if node.type == 'end':
+	#
+	# 		node.associated_bnodes = node_info_json[node.node_name]
+	#
+	# 		for bnode in node.associated_bnodes:
+	# 			key = keygen()
+	# 			print("generated key: {}".format(key))
+	# 			node.ids.append({bnode: key})
+	#
+	# 		# node.id = node_info_json[node.node_name]["node_ids"][0]
+	# 	elif node.type == 'backbone':
+	# 		# node.id = None
+	# 		pass
+	# 	else:
+	# 		print("ERROR, no type found")
+	# 		return ""
 
 	return "Setup!"
 
@@ -161,7 +164,8 @@ def backbone():
 	# create the backbone nodes
 
 	# gets all neighbours, reads from table
-	with open('tables/backbone.json') as json_file_backbone:
+	open_file = 'tables/backbone' + node._TABLE_VERSION + '.json'
+	with open(open_file) as json_file_backbone:
 		backbone_data = json.load(json_file_backbone)
 		# return jsonify(backbone_data)
 
@@ -178,6 +182,7 @@ def backbone():
 
 	if node.node_name not in node.backbone_nodes:
 		node.backbone_nodes.append(node.node_name)
+		restructure_backbone()
 		manual_rebalance()
 
 	for neighbour in neighbours_list:
@@ -242,6 +247,7 @@ def receive():
 			# node.backbone_nodes = merge_two_arrays(received_backbone_nodes, node.backbone_nodes)
 			merge_into_backbone_nodes(received_backbone_nodes)
 			node.dhtEngine.num_nodes = len(node.backbone_nodes)
+			restructure_backbone()
 			manual_rebalance()
 
 	if 'type' in data:
@@ -289,6 +295,7 @@ def receive():
 			add_neighbour(node_name_from)
 
 			# if node.type == "backbone":
+			restructure_backbone()
 			node.dhtEngine.rebuild_dht(node.backbone_nodes)
 
 			# dht_ip = get_dht_ip(node_name_from)
@@ -311,6 +318,7 @@ def receive():
 
 			if node_name_from not in node.backbone_nodes:
 				node.backbone_nodes.append(node_name_from)
+				restructure_backbone()
 				manual_rebalance()
 
 			# now take lsdb of received and merge with own lsdb
@@ -329,6 +337,7 @@ def neighbours():
 def manual_rebalance():
 
 	node.dhtEngine.num_nodes = len(node.backbone_nodes)
+	restructure_backbone()
 	node.dhtEngine.rebuild_dht(node.backbone_nodes)
 	# return json.dumps({'success': 'rebalance'})
 
@@ -378,7 +387,7 @@ def merge_into_backbone_nodes(y):
 	for element in y:
 		if element not in node.backbone_nodes:
 			node.backbone_nodes.append(element)
-
+	restructure_backbone()
 
 
 def add_neighbour(potential_neighbour):
@@ -386,6 +395,9 @@ def add_neighbour(potential_neighbour):
 	if potential_neighbour not in node.neighbours:
 		node.neighbours.append(potential_neighbour)
 
+def restructure_backbone():
+	# node.backbone_nodes.sort(key=int)
+	node.backbone_nodes.sort()
 
 
 @app.route('/graph', methods=['GET', 'POST'])
@@ -519,22 +531,22 @@ def send(payload, ip):
 	#TODO do we need this return?
 
 def get_ip(node_id):
-	# print("node id is: " + node_id)
-	with open('tables/ips.json') as json_file:
+	open_file = 'tables/ips' + node._TABLE_VERSION + '.json'
+	with open(open_file) as json_file:
 		data = json.load(json_file)
 		if node_id in data:
 			return node._URL_BASE + str(data[node_id]) + '/receive'
 
 def get_routing_ip(node_id):
-	# print("node id is: " + node_id)
-	with open('tables/ips.json') as json_file:
+	open_file = 'tables/ips' + node._TABLE_VERSION + '.json'
+	with open(open_file) as json_file:
 		data = json.load(json_file)
 		if node_id in data:
 			return node._URL_BASE + str(data[node_id]) + '/find'
 
 def get_dht_ip(node_id):
-	# print("node id is: " + node_id)
-	with open('tables/ips.json') as json_file:
+	open_file = 'tables/ips' + node._TABLE_VERSION + '.json'
+	with open(open_file) as json_file:
 		data = json.load(json_file)
 		if node_id in data:
 			return node._URL_BASE + str(data[node_id]) + '/receive/dht'
