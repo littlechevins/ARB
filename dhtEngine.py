@@ -51,7 +51,7 @@ class DHT:
 		if len(backbone_nodes) == 0:
 			return {}
 
-		print("Rebuilding dht with nodes: {}".format(backbone_nodes))
+		# print("Rebuilding dht with nodes: {}".format(backbone_nodes))
 
 		num_nodes = self.num_nodes
 
@@ -117,7 +117,7 @@ class DHT:
 
 	def get_key_from_node_id(self, id):
 
-		print("Current dht is: {}".format(self.dht))
+		# print("Current dht is: {}".format(self.dht))
 
 		id = self.base36decode(id[:self.rb])
 
@@ -132,4 +132,27 @@ class DHT:
 				return self.dht[key]
 
 		return "NO KEY FOUND IN DHT"
+
+	def get_assigned_key(self, node_name):
+		# print("All keys in dht {}".format(self.dht.keys()))
+		for key in self.dht.keys():
+			if self.dht[key] == node_name:
+				return key
+
+	def in_key_range(self, range, k):
+		range = range.replace('"', '')
+		k = k.replace('"', '')
+		# print("received range {}".format(range))
+		lower, upper = range.split('-')
+		# print("splitted key_range {} {}".format(lower, upper))
+		key = self.base36decode(k)
+		# print("decoded key {}".format(key))
+		lower_decoded = self.base36decode(lower)
+		upper_decoded = self.base36decode(upper)
+		# print("deoced key ranges {} {}".format(lower_decoded, upper_decoded))
+
+		if lower_decoded <= key <= upper_decoded:
+			return True
+		else:
+			return False
 

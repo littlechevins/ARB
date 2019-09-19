@@ -1,1 +1,18 @@
-{}
+{
+    "1": ["Oradea"],
+    "2": ["Oradea"],
+    "3": ["Oradea"],
+    "4": ["Oradea", "Zerind"],
+    "5": ["Arad"],
+    "6": ["Timisoara"],
+    "7": ["Timisoara", "Lugoj"],
+    "8": ["Mehadia"],
+    "9": ["Drobeta"],
+    "10": ["Drobeta"],
+    "11": ["Craiova"],
+    "12": ["Pitesti"],
+    "13": ["Pitesti", "Fagaras"],
+    "14": ["Fagaras"],
+    "15": ["Sibiu"],
+    "16": ["Sibiu", "Rimnicu_Vilcea", "Lugoj", "Timisoara", "Arad"]
+}

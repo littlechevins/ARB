@@ -112,12 +112,16 @@ def get_random():
 #
 # 	return key
 
-def keygen():
-	hasher = hashlib.md5(get_random())
-	h1 = base64.urlsafe_b64encode(hasher.digest())
-	h1 = re.sub('[!@#$=-_-\\xe2]', '', h1)
-	h1 = h1[:10]
-	return h1
+def keygen(key_range):
+	while True:
+		hasher = hashlib.md5(get_random())
+		h1 = base64.urlsafe_b64encode(hasher.digest())
+		h1 = re.sub('[!@#$=-_-\\xe2]', '', h1)
+		h1 = h1[:10]
+		# print("Generating new key {}".format(h1))
+		if node.dhtEngine.in_key_range(key_range, h1[:node.dhtEngine.rb]):
+			print("Generating new key {}".format(h1))
+			return h1
 
 
 @app.route("/setup")
@@ -128,32 +132,69 @@ def setup():
 	# 	node_info_json = json.load(node_info)
 	# 	node.type = node_info_json[node.node_name]["node_type"]
 
-	print("Setup phase, node type: {}".format(node.type))
+	# print("Setup phase, node type: {}".format(node.type))
 
 	# TODO put this back
 	# Setup associated nodes
-	# open_file = 'tables/associated_bnode' + node._TABLE_VERSION + '.json'
-	# with open(open_file) as node_info:
-	# 	node_info_json = json.load(node_info)
-	#
-	# 	if node.type == 'end':
-	#
-	# 		node.associated_bnodes = node_info_json[node.node_name]
-	#
-	# 		for bnode in node.associated_bnodes:
-	# 			key = keygen()
-	# 			print("generated key: {}".format(key))
-	# 			node.ids.append({bnode: key})
-	#
-	# 		# node.id = node_info_json[node.node_name]["node_ids"][0]
-	# 	elif node.type == 'backbone':
-	# 		# node.id = None
-	# 		pass
-	# 	else:
-	# 		print("ERROR, no type found")
-	# 		return ""
+	open_file = 'tables/associated_bnode' + node._TABLE_VERSION + '.json'
+	with open(open_file) as node_info:
+		node_info_json = json.load(node_info)
+
+		if node.type == 'end':
+
+			# Set up keys for enode
+
+			node.associated_bnodes = node_info_json[node.node_name]
+			# print("Setting up public keys")
+
+			for bnode in node.associated_bnodes:
+				ip = get_ip_raw(bnode) + '/bnode_key'
+				payload = {'node_name': bnode}
+				# print("ip {}".format(ip))
+				# print("payload {}".format(payload))
+				# key_range = # SEND to the bnode and the key_range data we get back is used to regenerate the keygen
+				key_range = send(payload, ip).text
+				# print("keyrange {}".format(key_range))
+				key = keygen(key_range)
+				# print("generated key: {}".format(key))
+				node.ids.append({bnode: key})
+
+			# Send a signal to associated bnodes to get handshake
+			for bnode in node.associated_bnodes:
+				key = get_key_from_node_ids(bnode)
+				payload = {'node_type': node.type, 'type': 'ENCR', 'end_node_key': key, 'node_name': node.node_name}
+				ip = get_ip(bnode)
+				print("Sending ENCR to {} with key {} at ip {}".format(bnode, key, ip))
+				send(payload, ip)
+
+
+			# node.id = node_info_json[node.node_name]["node_ids"][0]
+		elif node.type == 'backbone':
+			# node.id = None
+			pass
+		else:
+			print("ERROR, no type found")
+			return ""
 
 	return "Setup!"
+
+def get_key_from_node_ids(node_name):
+	# Get key from bnode
+	for dict_struct in node.ids:
+		dict_struct_key = dict_struct.keys()
+		for keys in dict_struct_key:
+			if keys == node_name:
+				return dict_struct[keys]
+
+
+@app.route("/bnode_key", methods=['POST'])
+def get_bnode_key():
+
+	data = request.get_json()
+	received_node_name = data['node_name']
+	# print("Received bnode_key request for {}".format(received_node_name))
+	key = node.dhtEngine.get_assigned_key(received_node_name)
+	return jsonify(key)
 
 
 @app.route("/")
@@ -219,14 +260,19 @@ def receive():
 	# IRQNR - initial request neighbour reply - sends self id and known neighbours - R1 becomes 2way
 	# CRQNR - confirm request neighbour reply - sends self id and known neighbours - R2 becomes 2way
 	# LSA - linked state advertisement
+	# ENCR - end node connection request - tells its bnode parent about a new connection between the two
+	# B2E - bnode two enode - bnode receives a routing request that is located in its end node
 
 	'''
 
 	data = request.get_json()
 
-	node_name_from = data['node_name']
-	node_id_from = data['node_ids']
-	node_name_from_arr = [node_name_from]
+
+	if 'node_name' in data:
+		node_name_from = data['node_name']
+		node_name_from_arr = [node_name_from]
+	if 'node_ids' in data:
+		node_id_from = data['node_ids']
 
 
 	# if 'dht' in data:
@@ -235,7 +281,7 @@ def receive():
 		# node.dhtEngine.dht = merge_two_dht(node_dht_from, node.dhtEngine.dht)
 
 	if 'node_type' in data:
-		print("found node_type in data, is {}".format(data['node_type']))
+		# print("found node_type in data, is {}".format(data['node_type']))
 		received_node_type = data['node_type']
 
 	# add received id to dht (only add when neighbourship is established)
@@ -265,19 +311,19 @@ def receive():
 		if payload_type == 'IRQNR':
 			print("Received payload IRQNR")
 
-			# check if sender is end node
-			if received_node_type and received_node_type == 'end':
-				print("RECEIVED MESSAGE FROM END NODE {}".format(node_name_from))
-				# check if doesnt already exist
-				if node_name_from not in node.end_nodes:
-					list_of_end_nodes = []
-					for dicts in node_id_from:
-						keys = dicts.keys()
-						for key in keys:
-							if key == node.node_name:
-								list_of_end_nodes.append(dicts[key])
-
-					node.end_nodes.append({node_name_from: list_of_end_nodes})
+			# # check if sender is end node
+			# if received_node_type and received_node_type == 'end':
+			# 	print("RECEIVED MESSAGE FROM END NODE {}".format(node_name_from))
+			# 	# check if doesnt already exist
+			# 	if node_name_from not in node.end_nodes:
+			# 		list_of_end_nodes = []
+			# 		for dicts in node_id_from:
+			# 			keys = dicts.keys()
+			# 			for key in keys:
+			# 				if key == node.node_name:
+			# 					list_of_end_nodes.append(dicts[key])
+			# 		if {node_name_from: list_of_end_nodes} not in node.end_nodes:
+			# 			node.end_nodes.append({node_name_from: list_of_end_nodes})
 
 			# add to known neighbours
 			add_neighbour(node_name_from)
@@ -305,10 +351,15 @@ def receive():
 			return ''
 
 		if payload_type == 'lsa':
+			print("Received payload LSA")
 			# received lsa
 			# build lsdb
 			# add node_name_from to lsdb, add neighbours
 			received_lsdb = data['lsdb']
+
+			if 'backbone_nodes' in data:
+				received_backbone_nodes = data['backbone_nodes']
+				merge_into_backbone_nodes(received_backbone_nodes)
 
 			# check if exists, if not then add, if it does then append
 			if node_name_from not in node.lsdb:
@@ -327,7 +378,58 @@ def receive():
 					node.lsdb[key] = merge_two_arrays(node.lsdb[key], received_lsdb[key])
 				else:
 					node.lsdb[key] = received_lsdb[key]
+
+		if payload_type == 'ENCR':
+
+			print("Received payload ENCR")
+
+			# check if sender is end node
+			if received_node_type and received_node_type == 'end':
+				# print("RECEIVED MESSAGE FROM END NODE {}".format(node_name_from))
+				# check if doesnt already exist
+				if not existing_key_in_end_nodes(node_name_from):
+					if 'end_node_key' in data:
+						received_end_node_key = data['end_node_key']
+						node.end_nodes.append({node_name_from: received_end_node_key})
+
+		# if payload_type == 'B2E':
+		#
+		# 	if 'origin' in data:
+		# 		origin = data['origin']
+		#
+		# 	print('...Received negotiation packet...')
+		# 	print('Origin: {}'.format(origin))
+
 	return ''
+
+def existing_key_in_end_nodes(given_key):
+
+	# print("Given key {}".format(given_key))
+	# print("current end nodes {}".format(node.end_nodes))
+	for dict_struct in node.end_nodes:
+		for key in dict_struct.keys():
+			if given_key == key:
+				return True
+	return False
+
+def existing_key_in_end_nodes_router(given_key):
+
+	# print("Given key {}".format(given_key))
+	# print("current end nodes {}".format(node.end_nodes))
+	for dict_struct in node.end_nodes:
+		for key in dict_struct.keys():
+			if given_key == dict_struct[key]:
+				return True
+	return False
+
+def get_enode_name_from_existing_key_in_end_nodes_router(given_key):
+
+	# print("Given key {}".format(given_key))
+	# print("current end nodes {}".format(node.end_nodes))
+	for dict_struct in node.end_nodes:
+		for key in dict_struct.keys():
+			if given_key == dict_struct[key]:
+				return key
 
 @app.route('/neighbours', methods=['GET'])
 def neighbours():
@@ -355,18 +457,21 @@ def lsa(direction):
 
 	# create payload,
 	lsa_payload = {'node_ids': node.ids, 'node_name': node.node_name, 'neighbours': node.neighbours, 'type': "lsa", 'seqn': node.seqn, 'lsdb': node.lsdb, 'node_type': node.type, 'backbone_nodes': node.backbone_nodes}
-	print("my neighbours {}".format(node.neighbours))
+	# print("my neighbours {}".format(node.neighbours))
 	# begin flooding
 
 	if direction:
 		for neighbour in node.neighbours:
+			# print("Getting ip for neighbour: {}".format(neighbour))
 			ip = get_ip(neighbour)
-			print("LSDB sending to {} with payload {}".format(ip, lsa_payload))
+			print("LSDB sending to {} with ip {}".format(neighbour, ip))
+			# print("LSDB sending to {} with payload {}".format(ip, lsa_payload))
 			send(lsa_payload, ip)
 	else:
 		for neighbour in reversed(node.neighbours):
+			# print("Getting ip for neighbour: {}".format(neighbour))
 			ip = get_ip(neighbour)
-			print("LSDB sending to {} with payload {}".format(ip, lsa_payload))
+			print("LSDB sending to {} with ip {}".format(neighbour, ip))
 			send(lsa_payload, ip)
 	return json.dumps({'success': 'lsa_send'})
 
@@ -422,20 +527,58 @@ def lsdb_to_graph():
 def find():
 	# this should find the next node to send, if we are at a end node, use dijkstra, pass it go next node
 
-
 	print("Received routing request")
 
 	data = request.get_json()
 
-	print("Data received: {}".format(data))
+	# print("Data received: {}".format(data))
 
-	destination = node.dhtEngine.get_key_from_node_id(data['dest'])
-	origin =  data['dest']
+	if 'type' in data:
+		if data['type'] == 'EOT':
+			if 'dest' in data:
+				destination = data['dest']
+
+			if 'origin' in data:
+				origin = data['origin']
+
+			# print("this is end node, destination is {}".format(destination))
+			# print("node name is: {}".format(node.node_name))
+			if destination == node.node_name:
+				print('...Received negotiation packet...from origin: {}'.format(origin))
+				if origin in node.threshold:
+					node.threshold[origin] += 1
+				else:
+					node.threshold[origin] = 1
+
+				# Send back??
+				#TODO
+
+				return "Received full package!"
+
+		return ''
+
+	if 'dest' in data:
+		destination = node.dhtEngine.get_key_from_node_id(data['dest'])
+
+	if 'origin' in data:
+		origin = data['origin']
+
+	if node.type == 'end':
+		print('Starting routing request from {} to {}'.format(node.node_name, data['dest']))
+		# Pass it to associtaed bnode
+		# Since we can have more than 1 abnode, we choose first one in list
+		bnode = node.associated_bnodes[0]
+		origin_key = get_key_from_node_ids(bnode)
+		payload = {'origin': origin_key, 'dest': data['dest']}
+		ip = get_routing_ip(bnode)
+		print("Routing to {} with ip {} with payload: {}".format(bnode, ip, payload))
+		send(payload, ip)
+		return ''
 
 	compare_dijk_length = []
-	print("Destination calculated: {}".format(destination))
+	# print("Destination calculated: {}".format(destination))
 
-	payload = {'origin': data['origin'], 'dest': destination}
+	payload = {'origin': data['origin'], 'dest': data['dest']}
 
 
 	# # Threadhold
@@ -448,20 +591,29 @@ def find():
 	# else:
 	# 	node.threshold[origin] = 1
 
-	if destination == node.node_name:
-		if origin in node.threshold:
-			node.threshold[origin] += 1
-		else:
-			node.threshold[origin] = 1
-
-		return "Received full package!"
+	# if destination == node.node_name:
+	# 	print("destination == node.node_name")
+	# 	print("destination = {}: node.node_name = {}".format(destination, node.node_name))
+	# 	if origin in node.threshold:
+	# 		node.threshold[origin] += 1
+	# 	else:
+	# 		node.threshold[origin] = 1
+	#
+	# 	return "Received full package!"
 
 	# first check if end node is connected to this
 
-	if destination in node.end_nodes:
-		# send
-		ip = get_routing_ip(destination)
-		send(payload, ip)
+	# if destination in node.end_nodes:
+	if existing_key_in_end_nodes_router(data['dest']):
+		print('Destination is a connected end node')
+		enode_key = get_enode_name_from_existing_key_in_end_nodes_router(data['dest'])
+		ip = get_routing_ip(enode_key)
+		enode_payload = {'origin': origin, 'dest': enode_key, 'type': 'EOT'}
+		# print("enode_key: {}".format(enode_key))
+		# print("enode_ip: {}".format(ip))
+		# print("enode_payload: {}".format(enode_payload))
+		print("Routing to {} with ip {} with payload: {}".format(enode_key, ip, payload))
+		send(enode_payload, ip)
 		return "Dijkstra routing complete!"
 
 	# method 1
@@ -475,9 +627,9 @@ def find():
 	if node.type != 'end':
 		# method 2
 		shortest_path = dijkstra(node.node_name, destination)
-		print("Using node.node_name")
+		# print("Using node.node_name")
 	else:
-		print("Using node.neighbours[0]")
+		# print("Using node.neighbours[0]")
 		shortest_path = dijkstra(node.neighbours[0], destination)
 
 
@@ -485,16 +637,16 @@ def find():
 
 	shortest_path = shortest_path.split(',')
 	next_node = shortest_path[0]
-	print("next node is {}".format(next_node))
+	# print("next node is {}".format(next_node))
 
 	# we have reached a path of two nodes
 	if next_node == node.node_name:
-		print("next_node == node.node_name")
+		# print("next_node == node.node_name")
 		next_node = shortest_path[1]
 
 
 	ip = get_routing_ip(next_node)
-	print("Routing to {} with payload: {}".format(ip, payload))
+	print("Routing to {} with ip {} with payload: {}".format(next_node, ip, payload))
 	send(payload, ip)
 	return jsonify(next_node)
 
@@ -522,13 +674,20 @@ def create_payload(node_ids, node_name, neighbours, rq, dht, type, backbone_node
 	return payload
 
 def send(payload, ip):
-	print("payload {}".format(payload))
-	print("ip {}".format(ip))
+	# print("payload {}".format(payload))
+	# print("ip {}".format(ip))
 	headers = {'Content-type': 'application/json'}
 	r = requests.post(ip, headers=headers, data=json.dumps(payload))
-	print("callback {}".format(r.status_code))
-	return ""
+	# print("callback {}".format(r.status_code))
+	return r
 	#TODO do we need this return?
+
+def get_ip_raw(node_name):
+	open_file = 'tables/ips' + node._TABLE_VERSION + '.json'
+	with open(open_file) as json_file:
+		data = json.load(json_file)
+		if node_name in data:
+			return node._URL_BASE + str(data[node_name])
 
 def get_ip(node_id):
 	open_file = 'tables/ips' + node._TABLE_VERSION + '.json'

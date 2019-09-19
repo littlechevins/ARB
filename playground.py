@@ -56,15 +56,45 @@ def get_random():
 	return x
 
 
-def keygen():
-	for x in range(0,30):
+def keygen(key_range, rb):
+
+	while True:
 		hasher = hashlib.md5(get_random())
 		h1 = base64.urlsafe_b64encode(hasher.digest())
 		# print("pre sub: " + h1)
 		h1 = re.sub('[!@#$=-_-\\xe2]', '', h1)
 		h1 = h1[:10]
 		# ids.append(h1)
-		print("post sub: " + h1)
+		# print("post sub: " + h1)
+		print("measng key rb {}".format(h1[:rb]))
+		if in_key_range(key_range, h1[:rb]):
+			return h1
+
+
+
+def in_key_range(range, k):
+
+	lower, upper = k.split('-')
+	key = base36decode(k)
+	lower_decoded = base36decode(lower)
+	upper_decoded = base36decode(upper)
+
+	if lower_decoded <= key <= upper_decoded:
+		return True
+	else:
+		return False
+
+
+def keygen2():
+
+	hasher = hashlib.md5(get_random())
+	h1 = base64.urlsafe_b64encode(hasher.digest())
+	# print("pre sub: " + h1)
+	h1 = re.sub('[!@#$=-_-\\xe2]', '', h1)
+	h1 = h1[:10]
+	# ids.append(h1)
+	print("post sub: " + h1)
+
 
 # def randrange():
 # 	for _ in range(0,10):
@@ -240,8 +270,8 @@ def main():
 	# key = 'a' * 3
 	# if ('aaa' == key):
 	# 	print("true")
-	arr = ["A", "B", "C", "D", "E", "F", "G", "F", "A", "B", "C", "D", "E", "F", "G", "F", "A", "B", "C", "D", "E", "F", "G", "F", "A", "B", "C", "D", "E", "F", "G", "F"]
-	rebuild_dht(1, arr, 12)
+	# arr = ["A", "B", "C", "D", "E", "F", "G", "F", "A", "B", "C", "D", "E", "F", "G", "F", "A", "B", "C", "D", "E", "F", "G", "F", "A", "B", "C", "D", "E", "F", "G", "F"]
+	# rebuild_dht(1, arr, 12)
 
 	# lower = 20
 	# upper = 29
@@ -249,10 +279,21 @@ def main():
 	# 	print("TRUEEEE")
 	#
 	# print(get_key_from_node_id("g5", 2, rebuild_dht(2)))
-	my_list = ["5", "7", "4", "11", "1"]
+	# my_list = ["5", "7", "4", "11", "1"]
 	# my_list = ["node_5", "node_7", "node_4", "node_11", "node_1"]
 	# my_list = [1, 5, 6, 7, 11,3, 5,7, 2, 8]
-	print(restructure_backbone(my_list))
+	# print(restructure_backbone(my_list))
+
+	# dht = {'x-z': u'Zerind', 'u-w': u'Timisoara', '6-8': u'Drobeta', '0-2': u'Arad', 'r-t': 'Sibiu', '3-5': u'Craiova', 'i-k': u'Oradea', 'l-n': u'Pitesti', '9-b': u'Fagaras', 'f-h': u'Mehadia', 'c-e': u'Lugoj', 'o-q': u'Rimnicu_Vilcea'}
+	# print(get_key_from_node_id(u'Drobeta', 1, dht)
+
+	# key_range = '0-r'
+	# rb = 1
+	# key = keygen(key_range, rb)
+	# print(key)
+
+	print(keygen2())
+
 
 if __name__ == "__main__":
 	main()
