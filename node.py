@@ -61,7 +61,7 @@ class Node:
 		self.dhtEngine = DHT()
 
 		self.threshold = {}
-		self.threshold_value = 0
+		self.threshold_value_max = 100
 
 		# Only enodes
 		self.associated_bnodes = []		# Contains a list of bnodes and id pair related
@@ -208,15 +208,11 @@ def backbone():
 	open_file = 'tables/backbone' + node._TABLE_VERSION + '.json'
 	with open(open_file) as json_file_backbone:
 		backbone_data = json.load(json_file_backbone)
-		# return jsonify(backbone_data)
 
 	if node.node_name in backbone_data:
 		neighbours_list = backbone_data[node.node_name]
-		# return jsonify(neighbours_list)
 	else:
-		return "No"
-	# 	return "yes"
-
+		return "Failed"
 
 	# send hello signal to neighbour to establish 2-way connection
 	current_neighbours = []
@@ -233,15 +229,6 @@ def backbone():
 
 	print("Starting LSA...")
 
-	# timer = threading.Timer(node.BACKBONE_INIT_DELAY, double_lsa)
-	# timer.start()
-
-	# r = randrange(10)
-	# time.sleep(r)
-	# for _ in range(0, 10):
-	# 	r2 = randrange(2)
-	# 	time.sleep(r2)
-	# 	lsa()
 	lsa(False)
 	lsa(True)
 
@@ -348,7 +335,7 @@ def receive():
 			# send(node.dhtEngine.dht, dht_ip)
 			# send final ok
 			#TODO
-			return ''
+			return jsonify({'status': 'success'})
 
 		if payload_type == 'lsa':
 			print("Received payload LSA")
@@ -400,7 +387,7 @@ def receive():
 		# 	print('...Received negotiation packet...')
 		# 	print('Origin: {}'.format(origin))
 
-	return ''
+	return jsonify({'status': 'success'})
 
 def existing_key_in_end_nodes(given_key):
 
@@ -523,6 +510,17 @@ def lsdb_to_graph():
 	else:
 		return ""
 
+@app.route('/rb', methods=['POST'])
+def modify_rb():
+	print("Received manual rb change request")
+	data = request.get_json()
+	if 'rb' in data:
+		rb = data['rb']
+		node.dhtEngine.rb = int(rb)
+		restructure_backbone()
+		node.dhtEngine.rebuild_dht(node.backbone_nodes)
+	return jsonify({'status': 'success'})
+
 @app.route('/find', methods=['POST'])
 def find():
 	# this should find the next node to send, if we are at a end node, use dijkstra, pass it go next node
@@ -555,13 +553,16 @@ def find():
 
 				return "Received full package!"
 
-		return ''
+		return jsonify({'status': 'success'})
 
 	if 'dest' in data:
 		destination = node.dhtEngine.get_key_from_node_id(data['dest'])
 
 	if 'origin' in data:
 		origin = data['origin']
+
+	if check_threshold(origin):
+		return jsonify({'error': '100 - threshold reached'})
 
 	if node.type == 'end':
 		print('Starting routing request from {} to {}'.format(node.node_name, data['dest']))
@@ -573,23 +574,13 @@ def find():
 		ip = get_routing_ip(bnode)
 		print("Routing to {} with ip {} with payload: {}".format(bnode, ip, payload))
 		send(payload, ip)
-		return ''
+		return jsonify({'status': 'success'})
 
 	compare_dijk_length = []
 	# print("Destination calculated: {}".format(destination))
 
 	payload = {'origin': data['origin'], 'dest': data['dest']}
 
-
-	# # Threadhold
-	# print("node.threshold[origin] {}".format(node.threshold[origin]))
-	# if origin in node.threshold:
-	# 	if node.threshold[origin] < node.threshold_value:
-	# 		node.threshold[origin] += 1
-	# 	else:
-	# 		raise ValueError("Threshold reached! Value of {} in node {}.".format(node.threshold[origin], origin))
-	# else:
-	# 	node.threshold[origin] = 1
 
 	# if destination == node.node_name:
 	# 	print("destination == node.node_name")
@@ -649,6 +640,19 @@ def find():
 	print("Routing to {} with ip {} with payload: {}".format(next_node, ip, payload))
 	send(payload, ip)
 	return jsonify(next_node)
+
+
+def check_threshold(origin):
+	# # Threadhold
+	# print("node.threshold[origin] {}".format(node.threshold[origin]))
+	if origin in node.threshold:
+		if node.threshold[origin] < node.threshold_value_max:
+			node.threshold[origin] += 1
+		else:
+			return True
+	else:
+		node.threshold[origin] = 1
+	return False
 
 
 

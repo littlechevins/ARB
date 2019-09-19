@@ -9,7 +9,7 @@ class DHT:
 
 	def __init__(self):
 		self.dht = {}					# DHT table for PK and IP addresses
-		self.rb = 1						# Routing bytes, influced by total number of backbone nodes and total load
+		self.rb = 1						# Routing bytes, influenced by total number of backbone nodes and total load
 		self.alpha_num_set = list("0123456789abcdefghijklmnopqrstuvwxyz")
 		self.num_nodes = 0
 

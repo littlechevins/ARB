@@ -80,5 +80,50 @@ tell application "iTerm2"
       write text "echo exporting flask app"
       write text "python node.py -n 16 -ip 6016 -t end"
     end tell
+    set newTab17 to (create tab with default profile)
+    tell current session of newTab17
+      write text "echo exporting flask app"
+      write text "python node.py -n 17 -ip 6017 -t end"
+    end tell
+    set newTab18 to (create tab with default profile)
+    tell current session of newTab18
+      write text "echo exporting flask app"
+      write text "python node.py -n 18 -ip 6018 -t end"
+    end tell
+    set newTab19 to (create tab with default profile)
+    tell current session of newTab19
+      write text "echo exporting flask app"
+      write text "python node.py -n 19 -ip 6019 -t end"
+    end tell
+    set newTab20 to (create tab with default profile)
+    tell current session of newTab20
+      write text "echo exporting flask app"
+      write text "python node.py -n 20 -ip 6020 -t end"
+    end tell
+    set newTab21 to (create tab with default profile)
+    tell current session of newTab21
+      write text "echo exporting flask app"
+      write text "python node.py -n 21 -ip 6021 -t end"
+    end tell
+    set newTab22 to (create tab with default profile)
+    tell current session of newTab22
+      write text "echo exporting flask app"
+      write text "python node.py -n 22 -ip 6022 -t end"
+    end tell
+    set newTab23 to (create tab with default profile)
+    tell current session of newTab23
+      write text "echo exporting flask app"
+      write text "python node.py -n 23 -ip 6023 -t end"
+    end tell
+    set newTab24 to (create tab with default profile)
+    tell current session of newTab24
+      write text "echo exporting flask app"
+      write text "python node.py -n 24 -ip 6024 -t end"
+    end tell
+    set newTab25 to (create tab with default profile)
+    tell current session of newTab25
+      write text "echo exporting flask app"
+      write text "python node.py -n 25 -ip 6025 -t end"
+    end tell
   end tell
 end tell

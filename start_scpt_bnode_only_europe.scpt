@@ -60,5 +60,45 @@ tell application "iTerm2"
       write text "echo exporting flask app"
       write text "python node.py -n Fagaras -ip 5012 -t backbone"
     end tell
+    set newTab13 to (create tab with default profile)
+    tell current session of newTab13
+      write text "echo exporting flask app"
+      write text "python node.py -n Bucharest -ip 5013 -t backbone"
+    end tell
+    set newTab14 to (create tab with default profile)
+    tell current session of newTab14
+      write text "echo exporting flask app"
+      write text "python node.py -n Giurgiu -ip 5014 -t backbone"
+    end tell
+    set newTab15 to (create tab with default profile)
+    tell current session of newTab15
+      write text "echo exporting flask app"
+      write text "python node.py -n Urziceni -ip 5015 -t backbone"
+    end tell
+    set newTab16 to (create tab with default profile)
+    tell current session of newTab16
+      write text "echo exporting flask app"
+      write text "python node.py -n Hirsova -ip 5016 -t backbone"
+    end tell
+    set newTab17 to (create tab with default profile)
+    tell current session of newTab17
+      write text "echo exporting flask app"
+      write text "python node.py -n Eforie -ip 5017 -t backbone"
+    end tell
+    set newTab18 to (create tab with default profile)
+    tell current session of newTab18
+      write text "echo exporting flask app"
+      write text "python node.py -n Vaslui -ip 5018 -t backbone"
+    end tell
+    set newTab19 to (create tab with default profile)
+    tell current session of newTab19
+      write text "echo exporting flask app"
+      write text "python node.py -n Iasi -ip 5019 -t backbone"
+    end tell
+    set newTab20 to (create tab with default profile)
+    tell current session of newTab20
+      write text "echo exporting flask app"
+      write text "python node.py -n Neamt -ip 5020 -t backbone"
+    end tell
   end tell
 end tell

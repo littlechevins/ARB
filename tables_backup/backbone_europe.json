@@ -11,12 +11,5 @@
     "Rimnicu_Vilcea": ["Pitesti", "Craiova", "Sibiu"],
     "Sibiu": ["Arad", "Oradea", "Fagaras", "Rimnicu_Vilcea"],
     "Fagaras": ["Sibiu"],
-    "Bucharest": ["Fagaras", "Pitesti"],
-    "Giurgiu": ["Bucharest"],
-    "Urziceni": ["Bucharest", "Hirsova", "Vaslui"],
-    "Hirsova": ["Urziceni", "Eforie"],
-    "Eforie": ["Hirsova"],
-    "Vaslui": ["Urziceni", "Iasi"],
-    "Iasi": ["Neamt", "Vaslui"],
-    "Neamt": ["Iasi"]
+    "Bucharest": ["Fagaras", "Pitesti"]
 }

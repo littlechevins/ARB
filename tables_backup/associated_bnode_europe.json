@@ -14,14 +14,5 @@
     "13": ["Pitesti", "Fagaras"],
     "14": ["Fagaras"],
     "15": ["Sibiu"],
-    "16": ["Sibiu", "Rimnicu_Vilcea", "Lugoj", "Timisoara", "Arad"],
-    "17": ["Giurgiu"],
-    "18": ["Urziceni"],
-    "19": ["Hirsova"],
-    "20": ["Eforie"],
-    "21": ["Vaslui"],
-    "22": ["Vaslui"],
-    "23": ["Iasi"],
-    "24": ["Iasi"],
-    "25": ["Neamt"]
+    "16": ["Sibiu", "Rimnicu_Vilcea", "Lugoj", "Timisoara", "Arad"]
 }
