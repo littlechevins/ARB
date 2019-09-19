@@ -1,0 +1,516 @@
+{
+	"info": {
+		"_postman_id": "acae5ef6-861e-4dd9-ab5b-0b5f61015bfc",
+		"name": "DHT_bnode_only_europe_info",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "bnode_info",
+			"item": [
+				{
+					"name": "info 1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5001/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5001",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 2",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5002/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5002",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 3",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5003/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5003",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 4",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5004/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5004",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 10",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5010/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5010",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 11",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5011/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5011",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 12",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5012/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5012",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "enode_info",
+			"item": [
+				{
+					"name": "info 1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:6001/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "6001",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 2",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:6002/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "6002",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 3",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:6003/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "6003",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 4",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:6004/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "6004",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 5",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5005/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5005",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 7",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:6007/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "6007",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 8",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:6008/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "6008",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 9",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:6009/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "6009",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 10",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5010/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5010",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 11",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5011/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5011",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 12",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5012/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5012",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info 25",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:6025/info",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "6025",
+							"path": [
+								"info"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "send",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"origin\": \"25\", \"dest\": \"9v31co89t2\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:6025/find",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "6025",
+					"path": [
+						"find"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "manual_rb",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"rb\": \"10\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/rb",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"rb"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
