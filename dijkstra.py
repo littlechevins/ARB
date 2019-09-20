@@ -1,7 +1,36 @@
+
+## Code references a combination of Maria Boldyreva and Rosetta code
+# Under the GNU Free Documentation
+
+#     Copyright (C)  2019 KEVIN LUO.
+#     Permission is granted to copy, distribute and/or modify this document
+#     under the terms of the GNU Free Documentation License, Version 1.3
+#     or any later version published by the Free Software Foundation;
+#     with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
+#     A copy of the license is included in the section entitled "GNU
+#     Free Documentation License".
+
+#***************************************************************************************
+#    Title: Dijkstras Algorithm Python
+#    Author: Rosetta code
+#    Date: 11SEP2019
+#    Code version: None
+#    Availability: https://rosettacode.org/wiki/Dijkstra%27s_algorithm#Python
+#
+#**************************************************************************************/
+
+#***************************************************************************************
+#    Title: Dijkstras Algorithm Python
+#    Author: Maria Boldyreva
+#    Date: 08JUL2018
+#    Code version: None
+#    Availability: https://dev.to/mxl/dijkstras-algorithm-in-python-algorithms-for-beginners-dkc
+#
+#**************************************************************************************/
+
+
 from collections import deque, namedtuple
 
-
-# we'll use infinity as a default distance to nodes.
 inf = float('inf')
 Edge = namedtuple('Edge', 'start, end, cost')
 
@@ -12,7 +41,6 @@ def make_edge(start, end, cost=1):
 
 class Graph:
     def __init__(self, edges):
-        # let's check that the data is right
         wrong_edges = [i for i in edges if len(i) not in [2, 3]]
         if wrong_edges:
             raise ValueError('Wrong edges data: {}'.format(wrong_edges))
@@ -88,10 +116,3 @@ class Graph:
             path.appendleft(current_vertex)
         return ','.join(path)
 
-
-# graph = Graph([
-#     ("a", "b", 7),  ("a", "c", 9),  ("a", "f", 14), ("b", "c", 10),
-#     ("b", "d", 15), ("c", "d", 11), ("c", "f", 2),  ("d", "e", 6),
-#     ("e", "f", 9)])
-#
-# print(graph.dijkstra("a", "e"))

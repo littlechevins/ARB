@@ -18,5 +18,6 @@
     "Eforie": ["Hirsova"],
     "Vaslui": ["Urziceni", "Iasi"],
     "Iasi": ["Neamt", "Vaslui"],
-    "Neamt": ["Iasi"]
+    "Neamt": ["Iasi"],
+    "NewNode": ["Neamt"]
 }

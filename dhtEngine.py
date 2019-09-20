@@ -51,8 +51,6 @@ class DHT:
 		if len(backbone_nodes) == 0:
 			return {}
 
-		# print("Rebuilding dht with nodes: {}".format(backbone_nodes))
-
 		num_nodes = self.num_nodes
 
 		buffer = int(pow(36, self.rb) / num_nodes) - 1
@@ -89,14 +87,9 @@ class DHT:
 
 		alpha_num_set = "0123456789abcdefghijklmnopqrstuvwxyz"
 
-		# dht_count = len(node.dht)
 		dht_count = len(backbone_nodes)
 
 		equal_share = int(math.ceil((36 / dht_count)))  # 36 for ALPHA + NUMERIC
-
-		# loop all bnodes and assign them its equal share from the pool,
-		# recalcualte dht baased on that
-		# broadcast a reassign
 
 		string_start = 0
 		string_end = equal_share
@@ -117,8 +110,6 @@ class DHT:
 
 	def get_key_from_node_id(self, id):
 
-		# print("Current dht is: {}".format(self.dht))
-
 		id = self.base36decode(id[:self.rb])
 
 		for key in self.dht.keys():
@@ -134,7 +125,6 @@ class DHT:
 		return "NO KEY FOUND IN DHT"
 
 	def get_assigned_key(self, node_name):
-		# print("All keys in dht {}".format(self.dht.keys()))
 		for key in self.dht.keys():
 			if self.dht[key] == node_name:
 				return key
@@ -142,14 +132,10 @@ class DHT:
 	def in_key_range(self, range, k):
 		range = range.replace('"', '')
 		k = k.replace('"', '')
-		# print("received range {}".format(range))
 		lower, upper = range.split('-')
-		# print("splitted key_range {} {}".format(lower, upper))
 		key = self.base36decode(k)
-		# print("decoded key {}".format(key))
 		lower_decoded = self.base36decode(lower)
 		upper_decoded = self.base36decode(upper)
-		# print("deoced key ranges {} {}".format(lower_decoded, upper_decoded))
 
 		if lower_decoded <= key <= upper_decoded:
 			return True
