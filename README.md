@@ -19,6 +19,9 @@ Built on the Python Flask framework for fast reliable network functionality.
 
 The current scripts are built on a **macOS** system using the Appla OSA script. This script allows the user to spawn multiple nodes (backbone/end + custom ip)
 
-1. Run using 'osascript start_scpt.scpt'
-2. This should spawn a secondary window where the nodes are initialized. 
-3. Using **Postman** or any other service, inject to the desired node IP
+1. Run bnodes using 'osascript start_scpt.scpt'
+2. Run enodes using 'osascript start_scpt.scpt'
+3. These should spawn a secondary window where the nodes are initialized. 
+4. Using **Postman** or any other service, inject to the desired node IP
+5. On postman, use the DHT_bnode_only_europe.postman_collection.json file to generate the network map
+6. Use DHT_bnode_only_europe_info.postman_collection.json to get information on each node
